@@ -63,6 +63,8 @@ input,select,textarea,button{font-size:16px;padding:8px;margin:4px 0;width:100%;
 <h3>新增餐廳</h3>
 <input id="nName" placeholder="餐廳名稱（必填）">
 <select id="nDistrict"></select>
+<input id="nAddr" placeholder="地址（選填，貼上後自動判斷地區）">
+<div class="small" id="distHint"></div>
 <input id="nMap" placeholder="Google Maps 連結（必填）">
 <input id="nOR" placeholder="OpenRice 連結（選填）">
 <button id="saveRest">新增</button>
@@ -84,6 +86,33 @@ const firebaseConfig = {
 const db=getFirestore(initializeApp(firebaseConfig));
 
 const DISTRICTS=["中西區","灣仔","東區","南區","油尖旺","深水埗","九龍城","黃大仙","觀塘","荃灣","屯門","元朗","北區","大埔","沙田","西貢","葵青","離島"];
+const DK={
+"中西區":["中西區","堅尼地城","石塘咀","西營盤","上環","中環","金鐘","半山","山頂","Central and Western","Central District","Kennedy Town","Shek Tong Tsui","Sai Ying Pun","Sheung Wan","Admiralty","Mid-Levels","The Peak"],
+"灣仔":["灣仔","銅鑼灣","跑馬地","大坑","掃桿埔","渣甸山","Wan Chai","Causeway Bay","Happy Valley","Tai Hang","So Kon Po","Jardine's Lookout"],
+"東區":["東區","天后","寶馬山","北角","炮台山","鰂魚涌","西灣河","筲箕灣","柴灣","小西灣","Tin Hau","Braemar Hill","North Point","Fortress Hill","Quarry Bay","Sai Wan Ho","Shau Kei Wan","Chai Wan","Siu Sai Wan"],
+"南區":["南區","薄扶林","香港仔","鴨脷洲","黃竹坑","淺水灣","赤柱","大潭","石澳","Pok Fu Lam","Aberdeen","Ap Lei Chau","Wong Chuk Hang","Repulse Bay","Stanley","Tai Tam","Shek O"],
+"油尖旺":["油尖旺","尖沙咀","佐敦","油麻地","旺角","大角咀","Tsim Sha Tsui","Jordan","Yau Ma Tei","Mong Kok","Tai Kok Tsui"],
+"深水埗":["深水埗","長沙灣","荔枝角","石硤尾","Sham Shui Po","Cheung Sha Wan","Lai Chi Kok","Shek Kip Mei"],
+"九龍城":["九龍城","紅磡","土瓜灣","何文田","九龍塘","Kowloon City","Hung Hom","To Kwa Wan","Ho Man Tin","Kowloon Tong"],
+"黃大仙":["黃大仙","鑽石山","新蒲崗","樂富","彩虹","Wong Tai Sin","Diamond Hill","San Po Kong","Lok Fu","Choi Hung"],
+"觀塘":["觀塘","牛頭角","九龍灣","藍田","油塘","Kwun Tong","Ngau Tau Kok","Kowloon Bay","Lam Tin","Yau Tong"],
+"荃灣":["荃灣","Tsuen Wan"],
+"屯門":["屯門","Tuen Mun"],
+"元朗":["元朗","天水圍","Yuen Long","Tin Shui Wai"],
+"北區":["上水","粉嶺","Sheung Shui","Fanling"],
+"大埔":["大埔","Tai Po"],
+"沙田":["沙田","馬鞍山","火炭","Sha Tin","Ma On Shan","Fo Tan"],
+"西貢":["西貢","將軍澳","Sai Kung","Tseung Kwan O"],
+"葵青":["葵涌","青衣","葵芳","Kwai Chung","Tsing Yi","Kwai Fong"],
+"離島":["東涌","長洲","大嶼山","梅窩","南丫島","坪洲","Tung Chung","Cheung Chau","Lantau","Mui Wo","Lamma","Peng Chau"]
+};
+function detectDistrict(addr){
+  const s=addr.toLowerCase();let best=null,len=0;
+  for(const [d,ks] of Object.entries(DK))for(const k of ks){
+    if(s.includes(k.toLowerCase())&&k.length>len){best=d;len=k.length;}
+  }
+  return best;
+}
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const today=()=>new Date().toLocaleDateString("sv-SE",{timeZone:"Asia/Hong_Kong"});
@@ -164,8 +193,9 @@ $("saveRest").onclick=async()=>{
   const name=$("nName").value.trim(),map=$("nMap").value.trim(),or=$("nOR").value.trim();
   if(!name||!map)return alert("餐廳名稱同 Google Maps 連結必填");
   if(!/^https?:\/\//.test(map)||(or&&!/^https?:\/\//.test(or)))return alert("連結要以 http 或 https 開頭");
-  await addDoc(collection(db,"restaurants"),{name,district:$("nDistrict").value,gmap:map,openrice:or,addedBy:me,ts:serverTimestamp()});
-  ["nName","nMap","nOR"].forEach(i=>$(i).value="");
+  await addDoc(collection(db,"restaurants"),{name,district:$("nDistrict").value,address:$("nAddr").value.trim(),gmap:map,openrice:or,addedBy:me,ts:serverTimestamp()});
+  ["nName","nAddr","nMap","nOR"].forEach(i=>$(i).value="");
+  $("distHint").textContent="";
 };
 
 $("saveReview").onclick=async()=>{
@@ -247,6 +277,11 @@ function render(){
   $("reviews").innerHTML=S.reviews.map(r=>`<div class="card"><b>${esc(rName(r.restId))}</b>　${"★".repeat(r.rating)}${"☆".repeat(5-r.rating)}<br>${esc(r.text)}<div class="small">${esc(r.by)}${r.editedBy?"（"+esc(r.editedBy)+" 已修改）":""} <a href="#" onclick="editReview('${r.id}');return false">修改</a> <a href="#" onclick="delReview('${r.id}');return false">刪除</a></div></div>`).join("")||"未有食評";
 }
 $("fDistrict").onchange=render;$("rvDistrict").onchange=render;
+$("nAddr").oninput=()=>{
+  const d=detectDistrict($("nAddr").value);
+  if(d){$("nDistrict").value=d;$("distHint").textContent="已自動判斷地區："+d+"（可手動更改）";}
+  else{$("distHint").textContent=$("nAddr").value?"判斷唔到地區，請手動選擇":"";}
+};
 </script>
 </body>
 </html>

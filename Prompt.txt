@@ -1,2 +1,56 @@
+For me to watch only, no need to see this file
 每次開新 AI 對話，可貼上這段提示：
 請先閱讀 AGENTS.md 及 PROJECT.md，再開始工作。完成後更新 PROJECT.md 的 Changelog 及相關章節，並告訴我是否需要重新部署。
+
+通用開工
+你正在協助維護「食乜好」專案（午餐意願、投票及食評 Web App）。
+
+開始前請依序做：
+1. 閱讀 AGENTS.md、PROJECT.md、README.md。
+2. 閱讀 index.html 及 firestore.rules 的現況。
+3. 用 5 句以內向我複述：專案目標、技術架構、已定案的 Decisions、已知限制。若文件與代碼不一致，以代碼為準並告訴我。
+
+工作規則：
+- 只做我要求的改動，不要重寫整個檔案。
+- 不引入 npm、打包工具或框架，除非我同意。
+- 介面文字保持香港粵語口語；回覆用繁體中文，英文關鍵字保留英文。
+- 不要在任何檔案寫入真實的 firebaseConfig 值、金鑰或憑證。
+- 未測試的代碼要明確說明「未測試」，不確定的事要標明，不要編造。
+- 若我的要求與 PROJECT.md 的 Decisions 衝突，先告訴我，等我確認。
+
+完成後：
+1. 更新 PROJECT.md 的 Changelog（日期、改動檔案、原因、是否需要重新部署），並同步更新受影響的章節。
+2. 列出：改了哪些檔案、我需要執行的指令（git push 或 firebase deploy）、驗證方法。
+
+我的任務是：
+（在此填寫任務）
+
+任務模板
+任務：<一句話描述>
+背景：<為什麼要做>
+範圍：只修改 <檔案名稱>
+不要改：<不想被改動的部分>
+完成標準：<怎樣算完成，例如按鈕可用、Console 無錯誤>
+需要回報：改動摘要、測試步驟、部署步驟、PROJECT.md 的更新內容
+
+收緊 Firestore 規則及降低濫用風險
+請先完成 Prompt 1 的開工步驟，再執行以下任務。
+
+任務：收緊 firestore.rules，在「無登入」前提下盡量防止垃圾資料及超大資料。
+
+需求：
+1. 以 PROJECT.md 的 Data Model 為準，對每個集合（members、restaurants、reviews、days 及其 intents、votes 子集合）：
+   - 限制允許的欄位名稱（不允許額外欄位）。
+   - 限制欄位型別及字串長度（例如名字、餐廳名稱、食評文字）。
+   - restaurants 的 gmap 必須是以 http:// 或 https:// 開頭的字串；openrice 若有填寫也要符合。
+   - reviews 的 rating 必須是 0 至 5 的整數。
+2. 保持現有功能全部可用：新增及剷除名字、新增及刪除餐廳、修改及刪除任何食評、意願、投票、截止及重開投票。
+3. 不要加入登入或 Firebase Auth，不改變 Decisions。
+4. 說明哪些風險仍然無法在無登入下解決。
+5. 若 index.html 寫入的欄位與新規則不符，請同步修改 index.html，並列出改動。
+
+輸出：
+- 完整的新 firestore.rules。
+- 逐個集合解釋規則，並列出 3 個我可以手動測試的例子（合法寫入及被拒絕的寫入）。
+- 我需要執行的指令：npx firebase-tools deploy --only firestore:rules
+- 更新 PROJECT.md 的 Changelog、Security Rules 及 Known Limitations。

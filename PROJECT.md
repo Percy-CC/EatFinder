@@ -30,7 +30,7 @@
 
 ## 4. Data Model（Firestore）
 - `members/{autoId}`：`name`（string）、`ts`。用戶名單，用於下拉選單。
-- `restaurants/{autoId}`：`name`、`district`（18 區之一）、`gmap`（Google Maps 連結，必填）、`openrice`（選填）、`addedBy`、`ts`。
+- `restaurants/{autoId}`：`name`、`district`（18 區之一）、`address`（選填，地址文字）、`gmap`（Google Maps 連結，必填）、`openrice`（選填）、`addedBy`、`ts`。
 - `reviews/{autoId}`：`restId`、`rating`（整數 0–5）、`text`、`by`、`editedBy`（選填）、`ts`。
 - `days/{YYYY-MM-DD}`：`closed`（boolean）、`winner`（restaurant ID 或 `"any"`）。
 - `days/{date}/intents/{成員名字}`：`name`、`joining`（boolean）、`choice`（restaurant ID 或 `"any"`，不參加時為空字串）、`ts`。
@@ -46,6 +46,7 @@
 - 餐廳：任何人可新增及刪除。刪除餐廳時，同時批次刪除該餐廳所有食評。地區（18 區）可用作篩選。
 - 食評：所有人可見；任何人可修改及刪除任何人的食評。餐廳頁顯示平均星數及食評數。
 - 餐廳名稱由用戶手動輸入。Google Maps 短連結無法在瀏覽器內解析名稱（CORS），故不自動讀取。
+- 新增餐廳時可貼上地址，App 會以地址中的中英文地區名稱自動選擇 18 區；判斷失敗時可手動修改地區。判斷只在前端完成，不依賴外部 API 或 API key。
 
 ## 6. Security Rules（現況）
 - 無登入，規則對大部分集合開放讀寫，只對餐廳建立及食評星數做格式檢查。
@@ -89,4 +90,5 @@
 ## 11. Changelog（最新在最上，每次改動都要新增）
 格式：`YYYY-MM-DD | 改動者（AI 名稱或人） | 檔案 | 改了什麼 | 為什麼 | 是否需重新部署`
 
+- 2026-10-08 | AI | `index.html`、`PROJECT.md` | 新增餐廳地址欄位及前端中英文地區名稱對照，自動判斷 18 區並可手動覆蓋；地址會寫入 Firestore | 讓地址可直接辨識地區，避免額外 API 與 API key | 需 push 到 GitHub；不需 deploy rules
 - 2026-10-08 | AI | 全部檔案 | 初版：名單下拉選單、餐廳新增／刪除（連帶刪除食評）、食評修改／刪除、投票及截止、每日自動重設 | 依用戶需求建立 | 需 push 到 GitHub 及 deploy rules
