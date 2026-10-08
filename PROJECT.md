@@ -90,5 +90,6 @@
 ## 11. Changelog（最新在最上，每次改動都要新增）
 格式：`YYYY-MM-DD | 改動者（AI 名稱或人） | 檔案 | 改了什麼 | 為什麼 | 是否需重新部署`
 
+- 2026-10-09 | AI | `index.html`、`PROJECT.md` | 在「今日」午餐選擇前加入地區篩選，並顯示候選餐廳的平均星數及食評數 | 讓用戶更快篩選地區及比較餐廳評價 | 需 push 到 GitHub；不需 deploy rules
 - 2026-10-08 | AI | `index.html`、`PROJECT.md` | 新增餐廳地址欄位及前端中英文地區名稱對照，自動判斷 18 區並可手動覆蓋；地址會寫入 Firestore | 讓地址可直接辨識地區，避免額外 API 與 API key | 需 push 到 GitHub；不需 deploy rules
 - 2026-10-08 | AI | 全部檔案 | 初版：名單下拉選單、餐廳新增／刪除（連帶刪除食評）、食評修改／刪除、投票及截止、每日自動重設 | 依用戶需求建立 | 需 push 到 GitHub 及 deploy rules

@@ -35,6 +35,7 @@ input,select,textarea,button{font-size:16px;padding:8px;margin:4px 0;width:100%;
 <div class="small" id="timeHint"></div>
 <label><input type="radio" name="join" value="yes" style="width:auto"> 一齊食</label>
 <label><input type="radio" name="join" value="no" style="width:auto"> 今日唔食</label>
+<select id="choiceDistrict"></select>
 <select id="choice"></select>
 <button id="addRestBtn1">搵唔到？新增餐廳</button>
 <button id="saveIntent">儲存</button>
@@ -128,6 +129,7 @@ function fillSelect(el,items,first){
 fillSelect($("rvDistrict"),DISTRICTS,"全部地區");
 fillSelect($("fDistrict"),DISTRICTS,"全部地區");
 fillSelect($("nDistrict"),DISTRICTS);
+fillSelect($("choiceDistrict"),DISTRICTS,"全部地區");
 $("rvStar").innerHTML=[0,1,2,3,4,5].map(n=>`<option value="${n}" ${n==3?"selected":""}>${n} 星</option>`).join("");
 
 document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
@@ -247,10 +249,15 @@ function render(){
   const t=hkTime();
   $("timeHint").textContent=(t>="12:00"&&t<="12:30")?"而家係填寫時段（12:00–12:30）":"建議填寫時間：12:00–12:30（唔係強制）";
 
-  const cur=$("choice").value;
-  const opts=[{id:"any",name:"冇所謂"},...S.rests];
-  $("choice").innerHTML=opts.map(r=>`<option value="${esc(r.id)}">${esc(r.name)}${r.district?"（"+esc(r.district)+"）":""}</option>`).join("");
-  if(cur)$("choice").value=cur;
+  const cur=$("choice").value,cd=$("choiceDistrict").value;
+  const label=r=>{
+    const s=stats(r.id);
+    const k=s.n?Math.round(Number(s.avg)):0;
+    const rt=s.n?`${"★".repeat(k)}${"☆".repeat(5-k)} ${s.avg}（${s.n}則）`:"未有評分";
+    return `${r.name}（${r.district}）${rt}`;
+  };
+  $("choice").innerHTML=`<option value="any">冇所謂</option>`+S.rests.filter(r=>!cd||r.district===cd).map(r=>`<option value="${esc(r.id)}">${esc(label(r))}</option>`).join("");
+  if(cur&&[...$("choice").options].some(o=>o.value===cur))$("choice").value=cur;
 
   const fd=$("rvDistrict").value,curR=$("rvRest").value;
   $("rvRest").innerHTML='<option value="">揀餐廳</option>'+S.rests.filter(r=>!fd||r.district===fd).map(r=>`<option value="${esc(r.id)}">${esc(r.name)}（${esc(r.district)}）</option>`).join("");
@@ -276,7 +283,7 @@ function render(){
 
   $("reviews").innerHTML=S.reviews.map(r=>`<div class="card"><b>${esc(rName(r.restId))}</b>　${"★".repeat(r.rating)}${"☆".repeat(5-r.rating)}<br>${esc(r.text)}<div class="small">${esc(r.by)}${r.editedBy?"（"+esc(r.editedBy)+" 已修改）":""} <a href="#" onclick="editReview('${r.id}');return false">修改</a> <a href="#" onclick="delReview('${r.id}');return false">刪除</a></div></div>`).join("")||"未有食評";
 }
-$("fDistrict").onchange=render;$("rvDistrict").onchange=render;
+$("fDistrict").onchange=render;$("rvDistrict").onchange=render;$("choiceDistrict").onchange=render;
 $("nAddr").oninput=()=>{
   const d=detectDistrict($("nAddr").value);
   if(d){$("nDistrict").value=d;$("distHint").textContent="已自動判斷地區："+d+"（可手動更改）";}
