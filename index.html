@@ -72,7 +72,15 @@ input,select,textarea,button{font-size:16px;padding:8px;margin:4px 0;width:100%;
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {getFirestore,collection,doc,setDoc,addDoc,updateDoc,deleteDoc,writeBatch,onSnapshot,serverTimestamp,query,orderBy} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-const firebaseConfig={apiKey:"YOUR_KEY",authDomain:"YOUR_PROJECT.firebaseapp.com",projectId:"YOUR_PROJECT",appId:"YOUR_APP_ID"};
+const firebaseConfig = {
+    apiKey: "AIzaSyCmDo6d8eHq9DNlpR0RToHKQ5_YbKa-Rys",
+    authDomain: "eatlunch-d7a7a.firebaseapp.com",
+    projectId: "eatlunch-d7a7a",
+    storageBucket: "eatlunch-d7a7a.firebasestorage.app",
+    messagingSenderId: "501916186969",
+    appId: "1:501916186969:web:6937555f96fb593f017448",
+    measurementId: "G-7D3FDR771N"
+  };
 const db=getFirestore(initializeApp(firebaseConfig));
 
 const DISTRICTS=["中西區","灣仔","東區","南區","油尖旺","深水埗","九龍城","黃大仙","觀塘","荃灣","屯門","元朗","北區","大埔","沙田","西貢","葵青","離島"];

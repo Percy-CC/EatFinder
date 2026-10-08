@@ -1,0 +1,26 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /members/{id} {
+      allow read, write: if true;
+    }
+    match /restaurants/{id} {
+      allow read, delete: if true;
+      allow create: if request.resource.data.name is string
+        && request.resource.data.name.size() < 60
+        && request.resource.data.gmap is string;
+    }
+    match /reviews/{id} {
+      allow read, delete: if true;
+      allow create, update: if request.resource.data.rating is int
+        && request.resource.data.rating >= 0
+        && request.resource.data.rating <= 5;
+    }
+    match /days/{d} {
+      allow read, write: if true;
+      match /{col}/{u} {
+        allow read, write: if true;
+      }
+    }
+  }
+}
