@@ -1,0 +1,2 @@
+每次開新 AI 對話，可貼上這段提示：
+請先閱讀 AGENTS.md 及 PROJECT.md，再開始工作。完成後更新 PROJECT.md 的 Changelog 及相關章節，並告訴我是否需要重新部署。

@@ -1,0 +1,1 @@
+請先閱讀並遵守根目錄的 AGENTS.md 及 PROJECT.md。完成任何改動後，必須更新 PROJECT.md 的 Changelog。
