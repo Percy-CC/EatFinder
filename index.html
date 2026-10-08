@@ -12,22 +12,27 @@ nav button.on{background:#222;color:#fff}
 section{display:none;background:#fff;padding:12px;border:1px solid #ddd;margin-bottom:12px}
 section.on{display:block}
 input,select,textarea,button{font-size:16px;padding:8px;margin:4px 0;width:100%;box-sizing:border-box}
+.row{display:flex;gap:6px}
 .card{border-bottom:1px solid #eee;padding:8px 0}
 .small{color:#666;font-size:13px}
 </style>
 </head>
 <body>
 <h2>食乜好</h2>
-<div id="who" class="small"></div>
+<div class="row">
+<select id="meSel"></select>
+<button id="addMember" style="width:auto">新增名字</button>
+<button id="delMember" style="width:auto">剷除名字</button>
+</div>
 <nav>
 <button data-t="today" class="on">今日</button>
-<button data-t="review">寫食評</button>
+<button data-t="review">食評</button>
 <button data-t="list">餐廳</button>
 </nav>
 
 <section id="today" class="on">
 <h3>今日午餐 <span id="dayLabel" class="small"></span></h3>
-<div class="small">建議填寫時間：12:00–12:30</div>
+<div class="small" id="timeHint"></div>
 <label><input type="radio" name="join" value="yes" style="width:auto"> 一齊食</label>
 <label><input type="radio" name="join" value="no" style="width:auto"> 今日唔食</label>
 <select id="choice"></select>
@@ -65,7 +70,7 @@ input,select,textarea,button{font-size:16px;padding:8px;margin:4px 0;width:100%;
 
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import {getFirestore,collection,doc,setDoc,addDoc,deleteDoc,onSnapshot,serverTimestamp,query,orderBy} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import {getFirestore,collection,doc,setDoc,addDoc,updateDoc,deleteDoc,writeBatch,onSnapshot,serverTimestamp,query,orderBy} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig={apiKey:"YOUR_KEY",authDomain:"YOUR_PROJECT.firebaseapp.com",projectId:"YOUR_PROJECT",appId:"YOUR_APP_ID"};
 const db=getFirestore(initializeApp(firebaseConfig));
@@ -74,24 +79,18 @@ const DISTRICTS=["中西區","灣仔","東區","南區","油尖旺","深水埗",
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const today=()=>new Date().toLocaleDateString("sv-SE",{timeZone:"Asia/Hong_Kong"});
+const hkTime=()=>new Date().toLocaleTimeString("en-GB",{timeZone:"Asia/Hong_Kong",hour:"2-digit",minute:"2-digit"});
 
-let me=localStorage.getItem("me");
-if(!me){
-  me=(prompt("請輸入你嘅名（朋友會見到）")||"").trim();
-  if(!me){location.reload();}
-  localStorage.setItem("me",me);
-}
-$("who").textContent="你係："+me;
-
-const S={rests:[],reviews:[],intents:[],votes:[],day:{}};
+let me=localStorage.getItem("me")||"";
+const S={members:[],rests:[],reviews:[],intents:[],votes:[],day:{}};
 let dayKey=today(),unsubs=[];
 
 function fillSelect(el,items,first){
-  el.innerHTML=(first?`<option value="">${first}</option>`:"")+items.map(i=>`<option value="${esc(i)}">${esc(i)}</option>`).join("");
+  el.innerHTML=(first!==undefined?`<option value="">${first}</option>`:"")+items.map(i=>`<option value="${esc(i)}">${esc(i)}</option>`).join("");
 }
-["rvDistrict","nDistrict"].forEach(id=>fillSelect($(id),DISTRICTS));
 fillSelect($("rvDistrict"),DISTRICTS,"全部地區");
 fillSelect($("fDistrict"),DISTRICTS,"全部地區");
+fillSelect($("nDistrict"),DISTRICTS);
 $("rvStar").innerHTML=[0,1,2,3,4,5].map(n=>`<option value="${n}" ${n==3?"selected":""}>${n} 星</option>`).join("");
 
 document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
@@ -101,6 +100,24 @@ document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
 const goList=()=>document.querySelector('[data-t="list"]').click();
 $("addRestBtn1").onclick=goList;$("addRestBtn2").onclick=goList;
 
+const needMe=()=>{if(!me){alert("請先喺上面下拉選單揀你嘅名");return false}return true;};
+
+$("meSel").onchange=()=>{me=$("meSel").value;localStorage.setItem("me",me);render();};
+$("addMember").onclick=async()=>{
+  const n=(prompt("輸入新名字")||"").trim();
+  if(!n)return;
+  if(S.members.some(m=>m.name===n))return alert("已有相同名字");
+  await addDoc(collection(db,"members"),{name:n,ts:serverTimestamp()});
+  me=n;localStorage.setItem("me",me);
+};
+$("delMember").onclick=async()=>{
+  const m=S.members.find(x=>x.name===$("meSel").value);
+  if(!m)return alert("請先喺下拉選單揀要剷除嘅名");
+  if(!confirm("確定剷除「"+m.name+"」？"))return;
+  await deleteDoc(doc(db,"members",m.id));
+  if(me===m.name){me="";localStorage.removeItem("me");}
+};
+
 const rName=id=>S.rests.find(r=>r.id===id)?.name||"（已刪除）";
 function stats(id){
   const rs=S.reviews.filter(r=>r.restId===id);
@@ -108,8 +125,8 @@ function stats(id){
   return {avg,n:rs.length};
 }
 
-function listen(col,key,q){
-  return onSnapshot(q||col,snap=>{
+function listen(ref,key,q){
+  return onSnapshot(q||ref,snap=>{
     S[key]=snap.docs.map(d=>({id:d.id,...d.data()}));render();
   });
 }
@@ -117,6 +134,7 @@ function attach(){
   unsubs.forEach(u=>u());unsubs=[];
   dayKey=today();
   $("dayLabel").textContent=dayKey;
+  unsubs.push(listen(collection(db,"members"),"members",query(collection(db,"members"),orderBy("ts"))));
   unsubs.push(listen(collection(db,"restaurants"),"rests"));
   unsubs.push(listen(collection(db,"reviews"),"reviews",query(collection(db,"reviews"),orderBy("ts","desc"))));
   unsubs.push(listen(collection(db,"days",dayKey,"intents"),"intents"));
@@ -124,15 +142,17 @@ function attach(){
   unsubs.push(onSnapshot(doc(db,"days",dayKey),d=>{S.day=d.data()||{};render();}));
 }
 attach();
-setInterval(()=>{if(today()!==dayKey)attach();},60000);
+setInterval(()=>{if(today()!==dayKey)attach();render();},60000);
 
 $("saveIntent").onclick=async()=>{
+  if(!needMe())return;
   const j=document.querySelector('input[name="join"]:checked');
   if(!j)return alert("請揀一齊食定唔食");
-  await setDoc(doc(db,"days",dayKey,"intents",me),{name:me,joining:j.value==="yes",choice:j.value==="yes"?$("choice").value||"any":"",ts:serverTimestamp()});
+  await setDoc(doc(db,"days",dayKey,"intents",me),{name:me,joining:j.value==="yes",choice:j.value==="yes"?($("choice").value||"any"):"",ts:serverTimestamp()});
 };
 
 $("saveRest").onclick=async()=>{
+  if(!needMe())return;
   const name=$("nName").value.trim(),map=$("nMap").value.trim(),or=$("nOR").value.trim();
   if(!name||!map)return alert("餐廳名稱同 Google Maps 連結必填");
   if(!/^https?:\/\//.test(map)||(or&&!/^https?:\/\//.test(or)))return alert("連結要以 http 或 https 開頭");
@@ -141,16 +161,34 @@ $("saveRest").onclick=async()=>{
 };
 
 $("saveReview").onclick=async()=>{
+  if(!needMe())return;
   const restId=$("rvRest").value;
   if(!restId)return alert("請揀餐廳");
   await addDoc(collection(db,"reviews"),{restId,rating:Number($("rvStar").value),text:$("rvText").value.trim(),by:me,ts:serverTimestamp()});
   $("rvText").value="";
 };
 
+window.delRest=async id=>{
+  const r=S.rests.find(x=>x.id===id);if(!r)return;
+  const rv=S.reviews.filter(x=>x.restId===id);
+  if(!confirm("確定刪除「"+r.name+"」？\n同時會刪除 "+rv.length+" 則食評，無法還原。"))return;
+  const b=writeBatch(db);
+  rv.forEach(x=>b.delete(doc(db,"reviews",x.id)));
+  b.delete(doc(db,"restaurants",id));
+  await b.commit();
+};
 window.delReview=async id=>{if(confirm("刪除呢個食評？"))await deleteDoc(doc(db,"reviews",id));};
-window.vote=async id=>{await setDoc(doc(db,"days",dayKey,"votes",me),{name:me,restId:id,ts:serverTimestamp()});};
+window.editReview=async id=>{
+  const r=S.reviews.find(x=>x.id===id);if(!r)return;
+  const s=prompt("星數（0–5）",r.rating);if(s===null)return;
+  const n=Number(s);
+  if(!Number.isInteger(n)||n<0||n>5)return alert("星數要係 0 至 5 嘅整數");
+  const t=prompt("食評內容",r.text||"");if(t===null)return;
+  await updateDoc(doc(db,"reviews",id),{rating:n,text:t.trim(),editedBy:me||""});
+};
+window.vote=async id=>{if(!needMe())return;await setDoc(doc(db,"days",dayKey,"votes",me),{name:me,restId:id,ts:serverTimestamp()});};
 window.closeVote=async()=>{
-  const cands=[...new Set(S.intents.filter(i=>i.joining&&i.choice&&i.choice!=="any").map(i=>i.choice))];
+  const cands=[...new Set(S.intents.filter(i=>i.joining&&i.choice&&i.choice!=="any").map(i=>i.choice))].filter(id=>S.rests.some(r=>r.id===id));
   let winner="any";
   if(cands.length){
     const c={};cands.forEach(k=>c[k]=0);
@@ -164,19 +202,26 @@ window.closeVote=async()=>{
 window.reopenVote=async()=>{await setDoc(doc(db,"days",dayKey),{closed:false,winner:null},{merge:true});};
 
 function render(){
-  const opts=[{id:"any",name:"冇所謂"},...S.rests];
+  fillSelect($("meSel"),S.members.map(m=>m.name),"— 揀你嘅名 —");
+  $("meSel").value=S.members.some(m=>m.name===me)?me:"";
+  if(me&&!S.members.some(m=>m.name===me)&&S.members.length)me="";
+
+  const t=hkTime();
+  $("timeHint").textContent=(t>="12:00"&&t<="12:30")?"而家係填寫時段（12:00–12:30）":"建議填寫時間：12:00–12:30（唔係強制）";
+
   const cur=$("choice").value;
+  const opts=[{id:"any",name:"冇所謂"},...S.rests];
   $("choice").innerHTML=opts.map(r=>`<option value="${esc(r.id)}">${esc(r.name)}${r.district?"（"+esc(r.district)+"）":""}</option>`).join("");
   if(cur)$("choice").value=cur;
 
   const fd=$("rvDistrict").value,curR=$("rvRest").value;
-  $("rvRest").innerHTML='<option value="">揀餐廳</option>'+S.rests.filter(r=>!fd||r.district===fd).map(r=>`<option value="${esc(r.id)}">${esc(r.name)}</option>`).join("");
+  $("rvRest").innerHTML='<option value="">揀餐廳</option>'+S.rests.filter(r=>!fd||r.district===fd).map(r=>`<option value="${esc(r.id)}">${esc(r.name)}（${esc(r.district)}）</option>`).join("");
   $("rvRest").value=curR;
 
   const joiners=S.intents.filter(i=>i.joining);
   $("intents").innerHTML=joiners.length?joiners.map(i=>`<div class="card">${esc(i.name)}：${i.choice==="any"?"冇所謂":esc(rName(i.choice))}</div>`).join(""):"暫時冇人";
 
-  const cands=[...new Set(joiners.filter(i=>i.choice&&i.choice!=="any").map(i=>i.choice))];
+  const cands=[...new Set(joiners.filter(i=>i.choice&&i.choice!=="any").map(i=>i.choice))].filter(id=>S.rests.some(r=>r.id===id));
   const cnt={};S.votes.forEach(v=>cnt[v.restId]=(cnt[v.restId]||0)+1);
   const myVote=S.votes.find(v=>v.name===me)?.restId;
   let h="";
@@ -189,9 +234,9 @@ function render(){
   $("voteBox").innerHTML=h;
 
   const f=$("fDistrict").value;
-  $("rests").innerHTML=S.rests.filter(r=>!f||r.district===f).map(r=>{const s=stats(r.id);return `<div class="card"><b>${esc(r.name)}</b>（${esc(r.district)}）<br>平均 ${s.avg} 星・${s.n} 則食評<br><a href="${esc(r.gmap)}" target="_blank" rel="noopener">Google Maps</a>${r.openrice?` | <a href="${esc(r.openrice)}" target="_blank" rel="noopener">OpenRice</a>`:""}</div>`}).join("")||"未有餐廳";
+  $("rests").innerHTML=S.rests.filter(r=>!f||r.district===f).map(r=>{const s=stats(r.id);return `<div class="card"><b>${esc(r.name)}</b>（${esc(r.district)}）<br>平均 ${s.avg} 星・${s.n} 則食評<br><a href="${esc(r.gmap)}" target="_blank" rel="noopener">Google Maps</a>${r.openrice?` | <a href="${esc(r.openrice)}" target="_blank" rel="noopener">OpenRice</a>`:""} | <a href="#" onclick="delRest('${r.id}');return false">刪除</a></div>`}).join("")||"未有餐廳";
 
-  $("reviews").innerHTML=S.reviews.map(r=>`<div class="card"><b>${esc(rName(r.restId))}</b>　${"★".repeat(r.rating)}${"☆".repeat(5-r.rating)}<br>${esc(r.text)}<div class="small">${esc(r.by)} ${r.by===me?`<a href="#" onclick="delReview('${r.id}');return false">刪除</a>`:""}</div></div>`).join("")||"未有食評";
+  $("reviews").innerHTML=S.reviews.map(r=>`<div class="card"><b>${esc(rName(r.restId))}</b>　${"★".repeat(r.rating)}${"☆".repeat(5-r.rating)}<br>${esc(r.text)}<div class="small">${esc(r.by)}${r.editedBy?"（"+esc(r.editedBy)+" 已修改）":""} <a href="#" onclick="editReview('${r.id}');return false">修改</a> <a href="#" onclick="delReview('${r.id}');return false">刪除</a></div></div>`).join("")||"未有食評";
 }
 $("fDistrict").onchange=render;$("rvDistrict").onchange=render;
 </script>
