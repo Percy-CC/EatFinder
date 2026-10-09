@@ -96,6 +96,7 @@
 ## 11. Changelog（最新在最上，每次改動都要新增）
 格式：`YYYY-MM-DD | 改動者（AI 名稱或人） | 檔案 | 改了什麼 | 為什麼 | 是否需重新部署`
 
+- 2026-10-09 | GitHub Copilot | `index.html`、`PROJECT.md` | 將新增餐廳表單移到「餐廳」頁頂部、餐廳清單之前 | 讓新增操作優先顯示 | 需 push 到 GitHub；不需 deploy rules
 - 2026-10-09 | GitHub Copilot | `index.html`、`PROJECT.md` | 將評分下拉選單改為五顆互動星星，支援滑過預覽、點擊／觸控、鍵盤操作及半星評分 | 令評分操作更直覺並支援觸控裝置 | 需 push 到 GitHub；不需 deploy rules
 - 2026-10-09 | GitHub Copilot | `index.html`、`firestore.rules`、`PROJECT.md` | 食評評分支援 0–5 星、每 0.5 星一級；更新星級顯示、修改驗證及 Firestore 規則 | 支援半星評分 | 需 push 到 GitHub 及重新 deploy rules
 - 2026-10-09 | GitHub Copilot | `index.html`、`firestore.rules`、`PROJECT.md` | 食評加入分頁、按日篩選月曆及每名最多一次的原子讚好；規則允許最多 100 個讚好名字 | 方便瀏覽、篩選及表達食評反應 | 需 push 到 GitHub 及 deploy rules

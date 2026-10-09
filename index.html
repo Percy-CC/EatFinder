@@ -163,9 +163,6 @@ nav button[data-t="mapSec"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://ww
 </section>
 
 <section id="list">
-<h3>餐廳清單</h3>
-<select id="fDistrict" aria-label="按地區篩選"></select>
-<div id="rests"></div>
 <div class="title-row">
 <h3>新增餐廳</h3>
 <button id="clearRest" type="button">清除</button>
@@ -179,6 +176,9 @@ nav button[data-t="mapSec"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://ww
 <input id="nOR" aria-label="OpenRice 連結" placeholder="OpenRice 連結（選填）">
 <input id="nLL" type="hidden">
 <button id="saveRest" class="primary">新增</button>
+<h3>餐廳清單</h3>
+<select id="fDistrict" aria-label="按地區篩選"></select>
+<div id="rests"></div>
 </section>
 
 <section id="mapSec">
@@ -642,7 +642,7 @@ function render(){
   else if(!cands.length)h="所有人都話冇所謂，唔使投票。";
   else{
     h=cands.map(id=>`<div class="card">${esc(rName(id))}　${cnt[id]||0} 票 ${S.day.closed?"":`<button onclick="vote('${id}')">${myVote===id?"已投（可改）":"投呢間"}</button>`}</div>`).join("");
-    h+=S.day.closed?`<h3>結果：${esc(rName(S.day.winner))}</h3><button onclick="reopenVote()">重開投票</button>`:`<button onclick="closeVote()">截止投票（打和-›Random））</button>`;
+    h+=S.day.closed?`<h3>結果：${esc(rName(S.day.winner))}</h3><button onclick="reopenVote()">重開投票</button>`:`<button onclick="closeVote()">截止投票（打和-›Random)</button>`;
   }
   $("voteBox").innerHTML=h;
 
