@@ -77,7 +77,10 @@ a{color:var(--link)}
 <h3>餐廳清單</h3>
 <select id="fDistrict"></select>
 <div id="rests"></div>
+<div class="title-row">
 <h3>新增餐廳</h3>
+<button id="clearRest" type="button">清除</button>
+</div>
 <input id="nMap" placeholder="Google Maps 連結（必填）">
 <button id="autoFill" type="button">自動讀取名稱、座標及地區</button>
 <input id="nName" placeholder="餐廳名稱（必填）">
@@ -366,6 +369,12 @@ $("saveRest").onclick=async()=>{
   ["nName","nAddr","nMap","nOR","nLL"].forEach(i=>$(i).value="");
   $("distHint").textContent="";
   if(!c)alert("已新增，但讀唔到座標，地圖上唔會顯示。可喺餐廳清單按「補座標」。");
+};
+
+$("clearRest").onclick=()=>{
+  ["nMap","nName","nAddr","nOR","nLL"].forEach(id=>$(id).value="");
+  $("nDistrict").selectedIndex=0;
+  $("distHint").textContent="";
 };
 
 $("saveReview").onclick=async()=>{
