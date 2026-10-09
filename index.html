@@ -264,6 +264,7 @@ fillSelect($("fDistrict"),DISTRICTS,"全部地區");
 fillSelect($("nDistrict"),DISTRICTS,"請選擇地區");
 fillSelect($("mDistrict"),DISTRICTS,"全部地區");
 fillSelect($("choiceDistrict"),DISTRICTS,"全部地區");
+$("choiceDistrict").value="灣仔";
 $("ratingPicker").innerHTML=Array.from({length:5},()=>'<span class="rating-star"><span>☆</span></span>').join("");
 function renderRatingPicker(preview=Number($("rvStar").value)){
   $("ratingPicker").querySelectorAll(".rating-star").forEach((star,index)=>{
