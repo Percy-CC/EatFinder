@@ -18,9 +18,10 @@ service cloud.firestore {
     }
     match /reviews/{id} {
       allow read, delete: if true;
-      allow create, update: if request.resource.data.rating is int
+      allow create, update: if request.resource.data.rating is number
         && request.resource.data.rating >= 0
         && request.resource.data.rating <= 5
+        && request.resource.data.rating % 0.5 == 0
         && (!('likes' in request.resource.data)
             || (request.resource.data.likes is list
                 && request.resource.data.likes.size() <= 100));

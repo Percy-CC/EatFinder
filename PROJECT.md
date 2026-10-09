@@ -32,7 +32,7 @@
 ## 4. Data Model（Firestore）
 - `members/{autoId}`：`name`（string）、`ts`。用戶名單，用於下拉選單。
 - `restaurants/{autoId}`：`name`、`district`（18 區之一）、`address`（選填，地址文字）、`gmap`（Google Maps 連結，必填）、`openrice`（選填）、`lat`／`lng`（選填，數字座標）、`addedBy`、`ts`。
-- `reviews/{autoId}`：`restId`、`rating`（整數 0–5）、`text`、`by`、`editedBy`（選填）、`likes`（選填，讚好者名字陣列，最多 100 個）、`ts`。
+- `reviews/{autoId}`：`restId`、`rating`（0–5，每 0.5 一級）、`text`、`by`、`editedBy`（選填）、`likes`（選填，讚好者名字陣列，最多 100 個）、`ts`。
 - `days/{YYYY-MM-DD}`：`closed`（boolean）、`winner`（restaurant ID 或 `"any"`）。
 - `days/{date}/intents/{成員名字}`：`name`、`joining`（boolean）、`choice`（restaurant ID 或 `"any"`，不參加時為空字串）、`ts`。
 - `days/{date}/votes/{成員名字}`：`name`、`restId`、`ts`。
@@ -45,14 +45,14 @@
 - 投票候選：只限當日有人選過的餐廳，並排除「冇所謂」及已刪除的餐廳。若沒有候選，顯示「所有人都話冇所謂，唔使投票」。
 - 投票：每人一票，可改票；按「截止投票」後，由按下的客戶端計票，平手時隨機抽一個，寫入 `days/{date}.winner`。可「重開投票」。
 - 餐廳：任何人可新增及刪除。新增表單可清除未送出的資料；刪除餐廳時，同時批次刪除該餐廳所有食評。地區（18 區）可用作篩選。
-- 食評：所有人可見；任何人可修改及刪除任何人的食評。食評可按名字讚好或取消，每個名字每則食評只計一次；列表可選每頁 5、10 或 20 則，亦可用月曆按日篩選及顯示全部。讚好只認名字，無登入下任何人都可冒用其他名字。
+- 食評：所有人可見；以五顆星互動選擇評分，滑過可預覽、點擊或觸控選擇，支援 0–5 星及每 0.5 星一級。任何人可修改及刪除任何人的食評。食評可按名字讚好或取消，每個名字每則食評只計一次；列表可選每頁 5、10 或 20 則，亦可用月曆按日篩選及顯示全部。讚好只認名字，無登入下任何人都可冒用其他名字。
 - 新增餐廳時可按「自動讀取名稱、座標及地區」，由 Apps Script 讀取 Google Maps 連結資料；如有地址會填入地址欄並觸發地區判斷。用戶可在新增前手動修改讀取結果。原本的短連結展開功能仍由 `expandUrl` 負責。
 - 新增餐廳時可貼上地址，App 會以地址中的中英文地區名稱自動選擇 18 區；判斷失敗時可手動修改地區。判斷只在前端完成，不依賴外部 API 或 API key。
 - 外觀：可手動切換深色／淺色模式，選擇存在瀏覽器 `localStorage`；首次使用時跟隨系統外觀設定。
 - 地圖：以 Leaflet／OpenStreetMap 顯示有座標的餐廳，可按地區或今日候選篩選；餐廳釘點顯示平均星數及評分顏色，今日候選加金色外框；底圖固定使用柔和樣式。新增餐廳時可由 Google Maps 連結自動讀取座標，讀取失敗時可在餐廳清單手動補座標。用戶可使用瀏覽器定位查看自己位置，並在餐廳彈窗查看直線距離。
 
 ## 6. Security Rules（現況）
-- 無登入，規則對大部分集合開放讀寫；餐廳建立及更新會檢查名稱、Google Maps 連結及可選座標範圍；食評建立及更新會檢查星數及選填 `likes` 陣列（最多 100 項）。
+- 無登入，規則對大部分集合開放讀寫；餐廳建立及更新會檢查名稱、Google Maps 連結及可選座標範圍；食評建立及更新會檢查 0–5 星且每 0.5 星一級，及選填 `likes` 陣列（最多 100 項）。
 - 用戶已接受此風險。保護方式只有「不公開網址」。
 - 「只可刪自己的食評」等權限無法在無登入下於伺服器端強制。
 
@@ -96,6 +96,8 @@
 ## 11. Changelog（最新在最上，每次改動都要新增）
 格式：`YYYY-MM-DD | 改動者（AI 名稱或人） | 檔案 | 改了什麼 | 為什麼 | 是否需重新部署`
 
+- 2026-10-09 | GitHub Copilot | `index.html`、`PROJECT.md` | 將評分下拉選單改為五顆互動星星，支援滑過預覽、點擊／觸控、鍵盤操作及半星評分 | 令評分操作更直覺並支援觸控裝置 | 需 push 到 GitHub；不需 deploy rules
+- 2026-10-09 | GitHub Copilot | `index.html`、`firestore.rules`、`PROJECT.md` | 食評評分支援 0–5 星、每 0.5 星一級；更新星級顯示、修改驗證及 Firestore 規則 | 支援半星評分 | 需 push 到 GitHub 及重新 deploy rules
 - 2026-10-09 | GitHub Copilot | `index.html`、`firestore.rules`、`PROJECT.md` | 食評加入分頁、按日篩選月曆及每名最多一次的原子讚好；規則允許最多 100 個讚好名字 | 方便瀏覽、篩選及表達食評反應 | 需 push 到 GitHub 及 deploy rules
 - 2026-10-09 | GitHub Copilot | `index.html`、`PROJECT.md` | 移除標準、灰階及深色底圖選項，保留柔和底圖並固定套用 | 簡化地圖樣式並保留柔和效果 | 需 push 到 GitHub；不需 deploy rules
 - 2026-10-09 | GitHub Copilot | `index.html`、`PROJECT.md` | 餐廳地圖加入評分顏色與數字釘點、今日候選金框及可記憶的四種底圖樣式 | 讓用戶更快比較餐廳評分並調整地圖閱讀方式 | 需 push 到 GitHub；不需 deploy rules

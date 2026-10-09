@@ -34,6 +34,14 @@ a{color:var(--link)}
 .cal .sel{background:#1a73e8;color:#fff}
 .cal .sel .small{color:#fff}
 .cal .tdy{box-shadow:inset 0 0 0 2px #ffd400}
+.half-star{position:relative;display:inline-block;color:#888}
+.half-star::before{content:"★";position:absolute;width:50%;overflow:hidden;color:#f9a825}
+.rating-picker{display:flex;gap:2px;width:max-content;touch-action:manipulation}
+.rating-picker:focus-visible{outline:2px solid var(--link);outline-offset:2px}
+.rating-star{width:40px;height:44px;display:grid;place-items:center;font-size:32px;line-height:1;cursor:pointer;user-select:none}
+.rating-star>span{position:relative;display:inline-block;color:#888}
+.rating-star.full>span{color:#f9a825}
+.rating-star.half>span::before{content:"★";position:absolute;left:0;top:0;width:50%;overflow:hidden;color:#f9a825}
 .row{display:flex;gap:6px}
 .card{border-bottom:1px solid var(--line);padding:8px 0}
 .small{color:var(--muted);font-size:13px}
@@ -76,7 +84,9 @@ a{color:var(--link)}
 <select id="rvDistrict"></select>
 <select id="rvRest"></select>
 <button id="addRestBtn2">搵唔到？新增餐廳</button>
-<select id="rvStar"></select>
+<div id="ratingPicker" class="rating-picker" role="slider" tabindex="0" aria-label="食評評分" aria-valuemin="0" aria-valuemax="5" aria-valuestep="0.5" aria-valuenow="0" aria-valuetext="未有評分"></div>
+<div class="small" id="ratingValue">未有評分</div>
+<input id="rvStar" type="hidden" value="0">
 <textarea id="rvText" rows="3" placeholder="食評（選填）"></textarea>
 <button id="saveReview">提交食評</button>
 <h3>最新食評</h3>
@@ -199,7 +209,47 @@ fillSelect($("fDistrict"),DISTRICTS,"全部地區");
 fillSelect($("nDistrict"),DISTRICTS);
 fillSelect($("mDistrict"),DISTRICTS,"全部地區");
 fillSelect($("choiceDistrict"),DISTRICTS,"全部地區");
-$("rvStar").innerHTML=[0,1,2,3,4,5].map(n=>`<option value="${n}" ${n==3?"selected":""}>${n} 星</option>`).join("");
+$("ratingPicker").innerHTML=Array.from({length:5},()=>'<span class="rating-star"><span>☆</span></span>').join("");
+function renderRatingPicker(preview=Number($("rvStar").value)){
+  $("ratingPicker").querySelectorAll(".rating-star").forEach((star,index)=>{
+    const value=index+1;
+    star.classList.toggle("full",preview>=value);
+    star.classList.toggle("half",preview>=value-0.5&&preview<value);
+  });
+  const value=Number($("rvStar").value);
+  $("ratingPicker").setAttribute("aria-valuenow",String(value));
+  $("ratingPicker").setAttribute("aria-valuetext",value?`${value} 星`:"未有評分");
+  $("ratingValue").textContent=value?`${value} 星`:"未有評分";
+}
+function ratingAtPoint(e){
+  const star=e.target.closest(".rating-star");
+  if(!star)return null;
+  const index=[...$("ratingPicker").children].indexOf(star)+1;
+  return index-(e.clientX<star.getBoundingClientRect().left+star.getBoundingClientRect().width/2?0.5:0);
+}
+function chooseRating(value){
+  $("rvStar").value=String(value);
+  renderRatingPicker(value);
+}
+renderRatingPicker();
+$("ratingPicker").onpointermove=e=>{
+  const value=ratingAtPoint(e);
+  if(value!==null)renderRatingPicker(value);
+};
+$("ratingPicker").onpointerleave=()=>renderRatingPicker();
+$("ratingPicker").onclick=e=>{
+  const value=ratingAtPoint(e);
+  if(value!==null)chooseRating(value);
+};
+$("ratingPicker").onkeydown=e=>{
+  if(!["ArrowLeft","ArrowDown","ArrowRight","ArrowUp","Home","End"].includes(e.key))return;
+  e.preventDefault();
+  let value=Number($("rvStar").value);
+  if(e.key==="Home")value=0;
+  else if(e.key==="End")value=5;
+  else value=Math.max(0,Math.min(5,value+(["ArrowRight","ArrowUp"].includes(e.key)?0.5:-0.5)));
+  chooseRating(value);
+};
 
 document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
   document.querySelectorAll("nav button,section").forEach(e=>e.classList.remove("on"));
@@ -232,6 +282,10 @@ function stats(id){
   const rs=S.reviews.filter(r=>r.restId===id);
   const avg=rs.length?(rs.reduce((a,b)=>a+b.rating,0)/rs.length).toFixed(1):"-";
   return {avg,n:rs.length};
+}
+function ratingStars(rating){
+  const value=Number(rating),full=Math.floor(value),half=value-full>=0.5;
+  return `${"★".repeat(full)}${half?'<span class="half-star">☆</span>':""}${"☆".repeat(5-full-(half?1:0))} <span class="small">${value.toFixed(1)} 星</span>`;
 }
 
 function listen(ref,key,q){
@@ -455,7 +509,7 @@ function renderReviews(){
   $("dayFilter").innerHTML=selDay?`顯示 ${esc(selDay)} 嘅食評（${all.length} 則） <a href="#" onclick="clearDay();return false">顯示全部</a>`:`共 ${all.length} 則食評`;
   $("reviews").innerHTML=part.map(r=>{
     const likes=r.likes||[],liked=likes.includes(me);
-    return `<div class="card"><b>${esc(rName(r.restId))}</b>　${"★".repeat(r.rating)}${"☆".repeat(5-r.rating)}<br>${esc(r.text)}<div class="small">${esc(r.by)}${r.editedBy?"（"+esc(r.editedBy)+" 已修改）":""}　${esc(dayOf(r))}　<a href="#" onclick="toggleLike('${r.id}');return false">${liked?"取消讚好":"讚好"}（${likes.length}）</a> <a href="#" onclick="editReview('${r.id}');return false">修改</a> <a href="#" onclick="delReview('${r.id}');return false">刪除</a></div></div>`;
+    return `<div class="card"><b>${esc(rName(r.restId))}</b>　${ratingStars(r.rating)}<br>${esc(r.text)}<div class="small">${esc(r.by)}${r.editedBy?"（"+esc(r.editedBy)+" 已修改）":""}　${esc(dayOf(r))}　<a href="#" onclick="toggleLike('${r.id}');return false">${liked?"取消讚好":"讚好"}（${likes.length}）</a> <a href="#" onclick="editReview('${r.id}');return false">修改</a> <a href="#" onclick="delReview('${r.id}');return false">刪除</a></div></div>`;
   }).join("")||"未有食評";
   $("pager").innerHTML=`<button style="width:auto" ${rvPage<=1?"disabled":""} onclick="goPage(${rvPage-1})">上一頁</button><div style="flex:1;text-align:center;align-self:center">${rvPage} / ${pages}</div><button style="width:auto" ${rvPage>=pages?"disabled":""} onclick="goPage(${rvPage+1})">下一頁</button>`;
   renderCal();
@@ -479,9 +533,9 @@ function renderCal(){
 window.delReview=async id=>{if(confirm("刪除呢個食評？"))await deleteDoc(doc(db,"reviews",id));};
 window.editReview=async id=>{
   const r=S.reviews.find(x=>x.id===id);if(!r)return;
-  const s=prompt("星數（0–5）",r.rating);if(s===null)return;
+  const s=prompt("星數（0–5，可用 0.5）",r.rating);if(s===null)return;
   const n=Number(s);
-  if(!Number.isInteger(n)||n<0||n>5)return alert("星數要係 0 至 5 嘅整數");
+  if(!Number.isFinite(n)||n<0||n>5||!Number.isInteger(n*2))return alert("星數要係 0 至 5，每次 0.5 星");
   const t=prompt("食評內容",r.text||"");if(t===null)return;
   await updateDoc(doc(db,"reviews",id),{rating:n,text:t.trim(),editedBy:me||""});
 };
@@ -533,7 +587,7 @@ function render(){
   else if(!cands.length)h="所有人都話冇所謂，唔使投票。";
   else{
     h=cands.map(id=>`<div class="card">${esc(rName(id))}　${cnt[id]||0} 票 ${S.day.closed?"":`<button onclick="vote('${id}')">${myVote===id?"已投（可改）":"投呢間"}</button>`}</div>`).join("");
-    h+=S.day.closed?`<h3>結果：${esc(rName(S.day.winner))}</h3><button onclick="reopenVote()">重開投票</button>`:`<button onclick="closeVote()">截止投票</button>`;
+    h+=S.day.closed?`<h3>結果：${esc(rName(S.day.winner))}</h3><button onclick="reopenVote()">重開投票</button>`:`<button onclick="closeVote()">截止投票（打和-›Random））</button>`;
   }
   $("voteBox").innerHTML=h;
 
