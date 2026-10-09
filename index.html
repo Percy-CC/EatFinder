@@ -5,20 +5,31 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>食乜好</title>
 <style>
-body{font-family:system-ui,sans-serif;max-width:640px;margin:0 auto;padding:12px;background:#fafafa}
+:root{color-scheme:light;--page:#fafafa;--surface:#fff;--text:#222;--muted:#666;--border:#ddd;--line:#eee;--control:#fff;--accent:#222;--accent-text:#fff;--link:#0057a8}
+:root[data-theme="dark"]{color-scheme:dark;--page:#17191b;--surface:#222629;--text:#edf0f2;--muted:#abb2b8;--border:#444b50;--line:#353b40;--control:#2b3034;--accent:#edf0f2;--accent-text:#17191b;--link:#91c4ff}
+body{font-family:system-ui,sans-serif;max-width:640px;margin:0 auto;padding:12px;background:var(--page);color:var(--text)}
+.title-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.title-row h2{margin:0}
+.title-row button{width:auto}
 nav{display:flex;gap:6px;margin-bottom:12px}
-nav button{flex:1;padding:10px;border:1px solid #ccc;background:#fff}
-nav button.on{background:#222;color:#fff}
-section{display:none;background:#fff;padding:12px;border:1px solid #ddd;margin-bottom:12px}
+nav button{flex:1;padding:10px;border:1px solid var(--border);background:var(--control);color:var(--text)}
+nav button.on{background:var(--accent);color:var(--accent-text)}
+section{display:none;background:var(--surface);padding:12px;border:1px solid var(--border);margin-bottom:12px}
 section.on{display:block}
-input,select,textarea,button{font-size:16px;padding:8px;margin:4px 0;width:100%;box-sizing:border-box}
+input,select,textarea,button{font-size:16px;padding:8px;margin:4px 0;width:100%;box-sizing:border-box;color:var(--text);background:var(--control);border:1px solid var(--border)}
+input[type="radio"]{accent-color:var(--link)}
+button{cursor:pointer}
+a{color:var(--link)}
 .row{display:flex;gap:6px}
-.card{border-bottom:1px solid #eee;padding:8px 0}
-.small{color:#666;font-size:13px}
+.card{border-bottom:1px solid var(--line);padding:8px 0}
+.small{color:var(--muted);font-size:13px}
 </style>
 </head>
 <body>
+<div class="title-row">
 <h2>食乜好</h2>
+<button id="themeToggle" type="button" aria-pressed="false">深色模式</button>
+</div>
 <div class="row">
 <select id="meSel"></select>
 <button id="addMember" style="width:auto">新增名字</button>
@@ -115,6 +126,19 @@ function detectDistrict(addr){
   return best;
 }
 const $=id=>document.getElementById(id);
+const savedTheme=localStorage.getItem("theme");
+const initialTheme=savedTheme==="dark"||savedTheme==="light"?savedTheme:(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");
+function applyTheme(theme){
+  document.documentElement.dataset.theme=theme;
+  $("themeToggle").textContent=theme==="dark"?"淺色模式":"深色模式";
+  $("themeToggle").setAttribute("aria-pressed",String(theme==="dark"));
+}
+applyTheme(initialTheme);
+$("themeToggle").onclick=()=>{
+  const theme=document.documentElement.dataset.theme==="dark"?"light":"dark";
+  localStorage.setItem("theme",theme);
+  applyTheme(theme);
+};
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const today=()=>new Date().toLocaleDateString("sv-SE",{timeZone:"Asia/Hong_Kong"});
 const hkTime=()=>new Date().toLocaleTimeString("en-GB",{timeZone:"Asia/Hong_Kong",hour:"2-digit",minute:"2-digit"});
