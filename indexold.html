@@ -2,102 +2,49 @@
 <html lang="zh-HK">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#F2F2F7" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>食乜好</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
-:root{color-scheme:light;--page:#F2F2F7;--surface:#FFFFFF;--control:#FFFFFF;--text:#1C1C1E;--muted:#6C6C70;--border:#8E8E93;--line:#E5E5EA;--fill:#E9E9EB;--thumb:#FFFFFF;--tint:#0062CC;--tint-fill:#0062CC;--tint-soft:rgba(0,98,204,.12);--on-tint:#FFFFFF;--danger:#D70015;--star:#C77700;--ok:#248A3D;--bar:rgba(249,249,249,.88);--accent:var(--tint-fill);--accent-text:var(--on-tint);--link:var(--tint)}
-:root[data-theme="dark"]{color-scheme:dark;--page:#000000;--surface:#1C1C1E;--control:#1C1C1E;--text:#FFFFFF;--muted:#AEAEB2;--border:#8E8E93;--line:#38383A;--fill:#3A3A3C;--thumb:#636366;--tint:#64A8FF;--tint-fill:#0A67D1;--tint-soft:rgba(100,168,255,.18);--on-tint:#FFFFFF;--danger:#FF6961;--star:#FF9F0A;--ok:#30D158;--bar:rgba(28,28,30,.88)}
-*{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%;text-size-adjust:100%;background:var(--page)}
-body{margin:0 auto;max-width:640px;padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) calc(84px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));background:var(--page);color:var(--text);font:1.0625rem/1.35 -apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang HK","PingFang TC",system-ui,sans-serif}
-.title-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:24px}
-body>.title-row:first-child{margin-top:8px}
-.title-row h2{margin:0;font-size:2.125rem;line-height:1.1;font-weight:700;letter-spacing:.01em}
-.title-row h3{margin:0}
-.title-row button{width:auto;margin:0;background:transparent;color:var(--tint);padding:0 4px}
-.title-row + .row{align-items:center;background:var(--surface);border-radius:12px;padding:2px 8px;margin:12px 0 16px}
-.title-row + .row select{flex:1;width:auto;min-width:0;margin:0;border:0;background:transparent}
-#addMember,#delMember{background:transparent;margin:0;padding:0 8px;white-space:nowrap}
-#delMember{color:var(--danger)}
-h3{margin:24px 0 8px;font-size:1.25rem;line-height:1.2;font-weight:600}
-section{display:none;background:transparent;border:0;padding:0;margin:0}
+:root{color-scheme:light;--page:#fafafa;--surface:#fff;--text:#222;--muted:#666;--border:#ddd;--line:#eee;--control:#fff;--accent:#222;--accent-text:#fff;--link:#0057a8}
+:root[data-theme="dark"]{color-scheme:dark;--page:#17191b;--surface:#222629;--text:#edf0f2;--muted:#abb2b8;--border:#444b50;--line:#353b40;--control:#2b3034;--accent:#edf0f2;--accent-text:#17191b;--link:#91c4ff}
+body{font-family:system-ui,sans-serif;max-width:640px;margin:0 auto;padding:12px;background:var(--page);color:var(--text)}
+.title-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.title-row h2{margin:0}
+.title-row button{width:auto}
+nav{display:flex;gap:6px;margin-bottom:12px}
+nav button{flex:1;padding:10px;border:1px solid var(--border);background:var(--control);color:var(--text)}
+nav button.on{background:var(--accent);color:var(--accent-text)}
+section{display:none;background:var(--surface);padding:12px;border:1px solid var(--border);margin-bottom:12px}
 section.on{display:block}
-section>h3:first-child{margin-top:8px}
-input:not([type="radio"]):not([type="checkbox"]):not([type="hidden"]),select,textarea{display:block;width:100%;min-height:44px;margin:8px 0;padding:10px 12px;font:inherit;font-size:max(16px,1rem);color:var(--text);background:var(--control);border:1px solid var(--border);border-radius:10px}
-textarea{min-height:96px;resize:vertical}
-button{display:block;width:100%;min-height:44px;margin:8px 0;padding:0 16px;font:inherit;font-size:max(16px,1rem);font-weight:500;color:var(--tint);background:var(--tint-soft);border:0;border-radius:10px;cursor:pointer}
-button.primary{min-height:50px;border-radius:12px;font-weight:600;color:var(--on-tint);background:var(--tint-fill)}
-button:disabled{opacity:.38;cursor:default}
-button:not(:disabled):active{opacity:.6}
-:focus-visible{outline:3px solid var(--tint);outline-offset:2px}
+input,select,textarea,button{font-size:16px;padding:8px;margin:4px 0;width:100%;box-sizing:border-box;color:var(--text);background:var(--control);border:1px solid var(--border)}
+input[type="radio"]{accent-color:var(--link)}
+button{cursor:pointer}
 a{color:var(--link)}
-a[onclick*="delRest"],a[onclick*="delReview"]{color:var(--danger)}
-.small{color:var(--muted);font-size:.8125rem;line-height:1.35}
-div.small{margin:4px 4px}
-.row{display:flex;gap:6px}
-nav{position:fixed;left:50%;bottom:0;z-index:2000;display:flex;width:100%;max-width:640px;margin:0;padding:6px 8px calc(6px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--bar);border-top:.5px solid var(--line);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px)}
-nav button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:49px;margin:0;padding:2px 0;font-size:11px;font-weight:500;color:var(--muted);background:transparent;border:0;border-radius:8px}
-nav button.on{color:var(--tint);background:transparent;font-weight:600}
-nav button::before{content:"";width:24px;height:24px;background:currentColor;-webkit-mask:var(--ic) center/contain no-repeat;mask:var(--ic) center/contain no-repeat}
-nav button[data-t="today"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='16' rx='3'/%3E%3Cpath d='M3 10h18M8 3v4M16 3v4'/%3E%3C/svg%3E")}
-nav button[data-t="review"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z'/%3E%3C/svg%3E")}
-nav button[data-t="list"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 6h13M8 12h13M8 18h13'/%3E%3Ccircle cx='4' cy='6' r='1'/%3E%3Ccircle cx='4' cy='12' r='1'/%3E%3Ccircle cx='4' cy='18' r='1'/%3E%3C/svg%3E")}
-nav button[data-t="mapSec"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 21s7-6.2 7-11a7 7 0 10-14 0c0 4.8 7 11 7 11z'/%3E%3Ccircle cx='12' cy='10' r='2.5'/%3E%3C/svg%3E")}
-.seg{display:flex;gap:2px;margin:8px 0;padding:2px;background:var(--fill);border-radius:10px}
-.seg label{position:relative;flex:1}
-.seg input{position:absolute;inset:0;width:100%;height:100%;margin:0;padding:0;opacity:0;cursor:pointer}
-.seg span{display:block;min-height:40px;line-height:40px;text-align:center;border-radius:8px;color:var(--text)}
-.seg input:checked + span{background:var(--thumb);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.3)}
-.seg input:focus-visible + span{outline:3px solid var(--tint);outline-offset:1px}
-.switch-row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;margin:8px 0;padding:0 16px;background:var(--surface);border-radius:12px}
-.switch-row input[type="checkbox"]{-webkit-appearance:none;appearance:none;position:relative;flex:none;width:51px;height:31px;margin:0;padding:0;background:var(--border);border:0;border-radius:16px;cursor:pointer;transition:background .2s}
-.switch-row input[type="checkbox"]::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;background:#fff;border-radius:50%;box-shadow:0 2px 4px rgba(0,0,0,.3);transition:transform .2s}
-.switch-row input[type="checkbox"]:checked{background:var(--ok)}
-.switch-row input[type="checkbox"]:checked::after{transform:translateX(20px)}
-#intents,#voteBox,#reviews,#rests{margin:8px 0;padding:12px 16px;background:var(--surface);border-radius:12px}
-.card{padding:12px 0;border-bottom:.5px solid var(--line)}
-.card:first-child{padding-top:0}
-.card:last-child{padding-bottom:0;border-bottom:0}
-.card a,#dayFilter a{display:inline-block;min-height:44px;line-height:44px;padding-right:12px}
-#voteBox .card{display:flex;align-items:center;justify-content:space-between;gap:12px}
-#voteBox .card button{width:auto;min-width:104px;margin:0}
-#voteBox h3{margin:12px 0 4px}
-#pager{align-items:center;margin:8px 0}
-#pager button{min-width:88px;margin:0}
-#pager div{color:var(--muted)}
-.rating-picker{display:flex;gap:2px;width:max-content;margin:4px 0;touch-action:manipulation}
-.rating-picker:focus-visible{outline:3px solid var(--tint);outline-offset:2px;border-radius:8px}
-.rating-star{display:grid;place-items:center;width:44px;height:44px;font-size:34px;line-height:1;cursor:pointer;user-select:none}
-.rating-star>span{position:relative;display:inline-block;color:var(--border)}
-.rating-star.full>span{color:var(--star)}
-.rating-star.half>span::before{content:"★";position:absolute;left:0;top:0;width:50%;overflow:hidden;color:var(--star)}
-.half-star{position:relative;display:inline-block;color:var(--border)}
-.half-star::before{content:"★";position:absolute;width:50%;overflow:hidden;color:var(--star)}
-.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px 2px;margin:8px 0;padding:8px;text-align:center;background:var(--surface);border-radius:12px}
-.cal div{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:44px;border:0;border-radius:10px;font-size:1rem;line-height:1.1}
-.cal div.small{min-height:28px;margin:0;font-size:.6875rem}
-.cal .has{color:var(--tint);background:var(--tint-soft);font-weight:600;cursor:pointer}
-.cal .has .small{color:inherit}
-.cal .sel{color:var(--on-tint);background:var(--tint-fill)}
-.cal .sel .small{color:var(--on-tint)}
-.cal .tdy{box-shadow:inset 0 0 0 2px var(--tint)}
-#calPrev,#calNext{width:44px;margin:0;padding:0;font-size:1.5rem}
-#calTitle{font-weight:600}
-#mapBox{height:60vh;height:60dvh;min-height:320px;margin:8px 0;overflow:hidden;background:var(--fill);border-radius:12px}
-.leaflet-touch .leaflet-bar a{width:44px;height:44px;line-height:44px}
+#mapBox{height:60vh;min-height:320px}
 .leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--surface);color:var(--text)}
-.leaflet-popup-content{margin:12px 16px;font-size:1rem}
-.leaflet-popup-content a{display:inline-block;min-height:44px;line-height:44px;padding-right:12px}
 .pin{width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center}
 .pin span{transform:rotate(45deg);color:#fff;font:bold 12px system-ui}
 .pin.today{box-shadow:0 0 0 3px #ffd400,0 1px 4px rgba(0,0,0,.5)}
 .mapSoft .leaflet-tile-pane{filter:saturate(.6) brightness(1.05)}
-@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
-@media (prefers-contrast:more){:root{--line:#8E8E93;--muted:#48484A}:root[data-theme="dark"]{--muted:#D1D1D6}}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}
+.cal div{padding:6px 0;border:1px solid #eee;font-size:14px;min-height:40px}
+.cal .has{background:#e8f0fe;cursor:pointer;font-weight:bold}
+.cal .sel{background:#1a73e8;color:#fff}
+.cal .sel .small{color:#fff}
+.cal .tdy{box-shadow:inset 0 0 0 2px #ffd400}
+.half-star{position:relative;display:inline-block;color:#888}
+.half-star::before{content:"★";position:absolute;width:50%;overflow:hidden;color:#f9a825}
+.rating-picker{display:flex;gap:2px;width:max-content;touch-action:manipulation}
+.rating-picker:focus-visible{outline:2px solid var(--link);outline-offset:2px}
+.rating-star{width:40px;height:44px;display:grid;place-items:center;font-size:32px;line-height:1;cursor:pointer;user-select:none}
+.rating-star>span{position:relative;display:inline-block;color:#888}
+.rating-star.full>span{color:#f9a825}
+.rating-star.half>span::before{content:"★";position:absolute;left:0;top:0;width:50%;overflow:hidden;color:#f9a825}
+.row{display:flex;gap:6px}
+.card{border-bottom:1px solid var(--line);padding:8px 0}
+.small{color:var(--muted);font-size:13px}
 </style>
 </head>
 <body>
@@ -106,11 +53,11 @@ nav button[data-t="mapSec"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://ww
 <button id="themeToggle" type="button" aria-pressed="false">深色模式</button>
 </div>
 <div class="row">
-<select id="meSel" aria-label="我嘅名字"></select>
+<select id="meSel"></select>
 <button id="addMember" style="width:auto">新增名字</button>
 <button id="delMember" style="width:auto">剷除名字</button>
 </div>
-<nav aria-label="主要導覽">
+<nav>
 <button data-t="today" class="on">今日</button>
 <button data-t="review">食評</button>
 <button data-t="list">餐廳</button>
@@ -120,14 +67,12 @@ nav button[data-t="mapSec"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://ww
 <section id="today" class="on">
 <h3>今日午餐 <span id="dayLabel" class="small"></span></h3>
 <div class="small" id="timeHint"></div>
-<div class="seg" role="radiogroup" aria-label="今日午餐意願">
-<label><input type="radio" name="join" value="yes"><span>一齊食</span></label>
-<label><input type="radio" name="join" value="no"><span>今日唔食</span></label>
-</div>
-<select id="choiceDistrict" aria-label="按地區篩選餐廳"></select>
-<select id="choice" aria-label="揀餐廳"></select>
+<label><input type="radio" name="join" value="yes" style="width:auto"> 一齊食</label>
+<label><input type="radio" name="join" value="no" style="width:auto"> 今日唔食</label>
+<select id="choiceDistrict"></select>
+<select id="choice"></select>
 <button id="addRestBtn1">搵唔到？新增餐廳</button>
-<button id="saveIntent" class="primary">儲存</button>
+<button id="saveIntent">儲存</button>
 <h3>想一齊食嘅人</h3>
 <div id="intents"></div>
 <h3>投票</h3>
@@ -136,16 +81,16 @@ nav button[data-t="mapSec"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://ww
 
 <section id="review">
 <h3>寫食評</h3>
-<select id="rvDistrict" aria-label="按地區篩選餐廳"></select>
-<select id="rvRest" aria-label="揀餐廳"></select>
+<select id="rvDistrict"></select>
+<select id="rvRest"></select>
 <button id="addRestBtn2">搵唔到？新增餐廳</button>
 <div id="ratingPicker" class="rating-picker" role="slider" tabindex="0" aria-label="食評評分" aria-valuemin="0" aria-valuemax="5" aria-valuestep="0.5" aria-valuenow="0" aria-valuetext="未有評分"></div>
 <div class="small" id="ratingValue">未有評分</div>
 <input id="rvStar" type="hidden" value="0">
-<textarea id="rvText" aria-label="食評內容" rows="3" placeholder="食評（選填）"></textarea>
-<button id="saveReview" class="primary">提交食評</button>
+<textarea id="rvText" rows="3" placeholder="食評（選填）"></textarea>
+<button id="saveReview">提交食評</button>
 <h3>最新食評</h3>
-<select id="pgSize" aria-label="每頁項目數">
+<select id="pgSize">
 <option value="5">每頁 5 項</option>
 <option value="10">每頁 10 項</option>
 <option value="20">每頁 20 項</option>
@@ -164,27 +109,27 @@ nav button[data-t="mapSec"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://ww
 
 <section id="list">
 <h3>餐廳清單</h3>
-<select id="fDistrict" aria-label="按地區篩選"></select>
+<select id="fDistrict"></select>
 <div id="rests"></div>
 <div class="title-row">
 <h3>新增餐廳</h3>
 <button id="clearRest" type="button">清除</button>
 </div>
-<input id="nMap" aria-label="Google Maps 連結" placeholder="Google Maps 連結（必填）">
+<input id="nMap" placeholder="Google Maps 連結（必填）">
 <button id="autoFill" type="button">自動讀取名稱、座標及地區</button>
-<input id="nName" aria-label="餐廳名稱" placeholder="餐廳名稱（必填）">
-<select id="nDistrict" aria-label="餐廳地區"></select>
-<input id="nAddr" aria-label="地址" placeholder="地址（選填，貼上後自動判斷地區）">
+<input id="nName" placeholder="餐廳名稱（必填）">
+<select id="nDistrict"></select>
+<input id="nAddr" placeholder="地址（選填，貼上後自動判斷地區）">
 <div class="small" id="distHint"></div>
-<input id="nOR" aria-label="OpenRice 連結" placeholder="OpenRice 連結（選填）">
+<input id="nOR" placeholder="OpenRice 連結（選填）">
 <input id="nLL" type="hidden">
-<button id="saveRest" class="primary">新增</button>
+<button id="saveRest">新增</button>
 </section>
 
 <section id="mapSec">
 <h3>餐廳地圖</h3>
-<select id="mDistrict" aria-label="按地區篩選地圖"></select>
-<label class="switch-row"><span>只顯示今日候選</span><input type="checkbox" id="mToday"></label>
+<select id="mDistrict"></select>
+<label><input type="checkbox" id="mToday" style="width:auto"> 只顯示今日候選</label>
 <button id="locBtn" type="button">我的位置</button>
 <div class="small">釘點數字＝平均星數；綠色 4 星或以上、黃色 3–3.9、紅色低於 3、灰色＝未有評分；金色外框＝今日候選。</div>
 <div id="mapBox" class="mapSoft"></div>
@@ -642,7 +587,7 @@ function render(){
   else if(!cands.length)h="所有人都話冇所謂，唔使投票。";
   else{
     h=cands.map(id=>`<div class="card">${esc(rName(id))}　${cnt[id]||0} 票 ${S.day.closed?"":`<button onclick="vote('${id}')">${myVote===id?"已投（可改）":"投呢間"}</button>`}</div>`).join("");
-    h+=S.day.closed?`<h3>結果：${esc(rName(S.day.winner))}</h3><button onclick="reopenVote()">重開投票</button>`:`<button onclick="closeVote()">截止投票（打和-›Random））</button>`;
+    h+=S.day.closed?`<h3>結果：${esc(rName(S.day.winner))}</h3><button onclick="reopenVote()">重開投票</button>`:`<button onclick="closeVote()">截止投票（打和-›Random）</button>`;
   }
   $("voteBox").innerHTML=h;
 
