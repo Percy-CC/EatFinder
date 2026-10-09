@@ -642,7 +642,7 @@ function render(){
   else if(!cands.length)h="所有人都話冇所謂，唔使投票。";
   else{
     h=cands.map(id=>`<div class="card">${esc(rName(id))}　${cnt[id]||0} 票 ${S.day.closed?"":`<button onclick="vote('${id}')">${myVote===id?"已投（可改）":"投呢間"}</button>`}</div>`).join("");
-    h+=S.day.closed?`<h3>結果：${esc(rName(S.day.winner))}</h3><button onclick="reopenVote()">重開投票</button>`:`<button onclick="closeVote()">截止投票（打和-›Random)</button>`;
+    h+=S.day.closed?`<h3>結果：${esc(rName(S.day.winner))}</h3><button onclick="reopenVote()">重開投票</button>`:`<button onclick="closeVote()">截止投票(打和-›Random)</button>`;
   }
   $("voteBox").innerHTML=h;
 
