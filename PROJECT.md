@@ -46,10 +46,10 @@
 - 投票：每人一票，可改票；按「截止投票」後，由按下的客戶端計票，平手時隨機抽一個，寫入 `days/{date}.winner`。可「重開投票」。
 - 餐廳：任何人可新增及刪除。刪除餐廳時，同時批次刪除該餐廳所有食評。地區（18 區）可用作篩選。
 - 食評：所有人可見；任何人可修改及刪除任何人的食評。餐廳頁顯示平均星數及食評數。
-- 餐廳名稱由用戶手動輸入。Google Maps 短連結無法在瀏覽器內解析名稱（CORS），故不自動讀取。
+- 新增餐廳時可按「自動讀取名稱、座標及地區」，由 Apps Script 讀取 Google Maps 連結資料；用戶可在新增前手動修改讀取結果。原本的短連結展開功能仍由 `expandUrl` 負責。
 - 新增餐廳時可貼上地址，App 會以地址中的中英文地區名稱自動選擇 18 區；判斷失敗時可手動修改地區。判斷只在前端完成，不依賴外部 API 或 API key。
 - 外觀：可手動切換深色／淺色模式，選擇存在瀏覽器 `localStorage`；首次使用時跟隨系統外觀設定。
-- 地圖：以 Leaflet／OpenStreetMap 顯示有座標的餐廳，可按地區或今日候選篩選；新增餐廳時可輸入座標，亦可嘗試由 Google Maps 連結讀取。讀取失敗時可在餐廳清單手動補座標。用戶可使用瀏覽器定位查看自己位置，並在餐廳彈窗查看直線距離。
+- 地圖：以 Leaflet／OpenStreetMap 顯示有座標的餐廳，可按地區或今日候選篩選；新增餐廳時可由 Google Maps 連結自動讀取座標，讀取失敗時可在餐廳清單手動補座標。用戶可使用瀏覽器定位查看自己位置，並在餐廳彈窗查看直線距離。
 
 ## 6. Security Rules（現況）
 - 無登入，規則對大部分集合開放讀寫；餐廳建立及更新會檢查名稱、Google Maps 連結及可選座標範圍；食評建立及更新會檢查星數。
@@ -66,7 +66,7 @@
 - 平手時隨機決定勝出者。
 - 推送提醒（11:55）延後，因 Cloud Functions 排程需要 Blaze 付費方案。
 - 日後需要可移交：設定集中在 `firebaseConfig`，Firebase 以 Owner 角色移交，GitHub 儲存庫用 Transfer。
-- Apps Script 只用於展開 Google Maps 短連結，不取代 Firebase 作為資料後端。
+- Apps Script 用於展開 Google Maps 短連結及讀取餐廳資料，不取代 Firebase 作為資料後端。
 
 ## 8. Setup Summary（給新接手者）
 1. Firebase Console 建立專案，註冊 Web App，複製 `firebaseConfig` 到 `index.html`。
@@ -83,7 +83,7 @@
 - 未做 PWA manifest 及離線支援。
 - 代碼未經真實環境完整測試（以首次部署結果為準）。
 - 沒有自動刪除舊的 `days` 資料。
-- Apps Script `EXPAND_URL` 已設定；短連結展開仍需配合已部署的 Apps Script Web App 正常回傳 JSON。沒有座標的餐廳不會出現在地圖標記中。
+- Apps Script `EXPAND_URL` 已設定；短連結展開及餐廳資料自動讀取需配合已部署的 Apps Script Web App 正常回傳 JSON。沒有座標的餐廳不會出現在地圖標記中。
 
 ## 10. TODO / Ideas
 - PWA manifest 及圖示（加入主畫面體驗）。
@@ -91,11 +91,13 @@
 - 推送提醒（需升級 Blaze，可由用戶關閉）。
 - 清理舊 `days` 資料的方法。
 - 重複餐廳檢查（以 Google Maps 連結比對）。
-- 測試 Apps Script 短連結展開及地圖座標讀取。
+- 測試 Apps Script 短連結展開、餐廳資料自動讀取及地圖座標讀取。
 
 ## 11. Changelog（最新在最上，每次改動都要新增）
 格式：`YYYY-MM-DD | 改動者（AI 名稱或人） | 檔案 | 改了什麼 | 為什麼 | 是否需重新部署`
 
+- 2026-10-09 | GitHub Copilot | `index.html`、`PROJECT.md` | 新增餐廳表單將 Google Maps 連結移到最前，隱藏座標輸入欄並保留程式自動讀取 | 簡化新增表單，避免手動輸入座標 | 需 push 到 GitHub；不需 deploy rules
+- 2026-10-09 | GitHub Copilot | `index.html`、`PROJECT.md` | 新增由 Google Maps 連結自動讀取餐廳名稱、座標及地區的按鈕，並保留手動修改及原短連結展開功能 | 減少新增餐廳時手動輸入資料 | 需 push 到 GitHub；不需 deploy rules
 - 2026-10-09 | GitHub Copilot | `index.html`、`PROJECT.md` | 地圖加入「我的位置」定位按鈕、位置精度圈及餐廳直線距離 | 方便用戶比較自己與餐廳的位置 | 需 push 到 GitHub；不需 deploy rules
 - 2026-10-09 | GitHub Copilot | `index.html`、`PROJECT.md` | 設定 Apps Script Web App `/exec` 端點，更新短連結功能的限制與待測事項 | 啟用 Google Maps 短連結展開 | 需 push 到 GitHub；不需 deploy rules
 - 2026-10-09 | GitHub Copilot | `index.html`、`firestore.rules`、`PROJECT.md` | 新增 Leaflet／OpenStreetMap 餐廳地圖、地區及今日候選篩選、座標輸入與補登；餐廳規則加入座標範圍驗證並允許更新 | 方便查看餐廳位置並補齊座標 | 需 push 到 GitHub 及 deploy rules；短連結展開須先設定 Apps Script `/exec` 網址

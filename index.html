@@ -78,13 +78,14 @@ a{color:var(--link)}
 <select id="fDistrict"></select>
 <div id="rests"></div>
 <h3>新增餐廳</h3>
+<input id="nMap" placeholder="Google Maps 連結（必填）">
+<button id="autoFill" type="button">自動讀取名稱、座標及地區</button>
 <input id="nName" placeholder="餐廳名稱（必填）">
 <select id="nDistrict"></select>
 <input id="nAddr" placeholder="地址（選填，貼上後自動判斷地區）">
 <div class="small" id="distHint"></div>
-<input id="nMap" placeholder="Google Maps 連結（必填）">
 <input id="nOR" placeholder="OpenRice 連結（選填）">
-<input id="nLL" placeholder="座標（選填）例如 22.3193,114.1694">
+<input id="nLL" type="hidden">
 <button id="saveRest">新增</button>
 </section>
 
@@ -232,6 +233,33 @@ $("saveIntent").onclick=async()=>{
 };
 
 const EXPAND_URL="https://script.google.com/macros/s/AKfycbzzAJ2IIf2kEUrIOB3Jsiq-NGiVvsEro790xwLul8VmjUAxRHTCJ0gfrZNkz9V6i1ukRQ/exec";
+
+async function linkInfo(u){
+  if(!EXPAND_URL.startsWith("https://"))throw new Error("未設定 EXPAND_URL");
+  const r=await fetch(EXPAND_URL+"?u="+encodeURIComponent(u));
+  const j=await r.json();
+  if(j.error)throw new Error(j.error);
+  return j;
+}
+function districtFrom(text){
+  return DISTRICTS.find(d=>text.includes(d))||"";
+}
+$("autoFill").onclick=async()=>{
+  const u=$("nMap").value.trim();
+  if(!/^https?:\/\//.test(u))return alert("請先貼上 Google Maps 連結");
+  $("autoFill").disabled=true;
+  const msg=[];
+  try{
+    const j=await linkInfo(u);
+    if(j.name){$("nName").value=j.name;msg.push("名稱："+j.name);}else msg.push("讀唔到名稱");
+    if(j.lat!=null){$("nLL").value=j.lat+","+j.lng;msg.push("座標："+j.lat+","+j.lng);}else msg.push("讀唔到座標");
+    const d=districtFrom(j.address||"");
+    if(d){$("nDistrict").value=d;msg.push("地區："+d);}else msg.push("讀唔到地區，請手動揀");
+    if(j.address)msg.push("地址："+j.address);
+  }catch(e){msg.push("讀取失敗："+e.message);}
+  $("autoFill").disabled=false;
+  alert(msg.join("\n")+"\n\n請檢查後再按「新增」。");
+};
 
 async function expandUrl(u){
   if(!/maps\.app\.goo\.gl|goo\.gl\/maps/.test(u))return u;
