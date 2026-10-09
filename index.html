@@ -208,24 +208,24 @@ const db=getFirestore(initializeApp(firebaseConfig));
 
 const DISTRICTS=["中西區","灣仔","東區","南區","油尖旺","深水埗","九龍城","黃大仙","觀塘","荃灣","屯門","元朗","北區","大埔","沙田","西貢","葵青","離島"];
 const DK={
-"中西區":["中西區","堅尼地城","石塘咀","西營盤","上環","中環","金鐘","半山","山頂","Central and Western","Central District","Kennedy Town","Shek Tong Tsui","Sai Ying Pun","Sheung Wan","Admiralty","Mid-Levels","The Peak"],
-"灣仔":["灣仔","銅鑼灣","跑馬地","大坑","掃桿埔","渣甸山","Wan Chai","Causeway Bay","Happy Valley","Tai Hang","So Kon Po","Jardine's Lookout"],
-"東區":["東區","天后","寶馬山","北角","炮台山","鰂魚涌","西灣河","筲箕灣","柴灣","小西灣","Tin Hau","Braemar Hill","North Point","Fortress Hill","Quarry Bay","Sai Wan Ho","Shau Kei Wan","Chai Wan","Siu Sai Wan"],
-"南區":["南區","薄扶林","香港仔","鴨脷洲","黃竹坑","淺水灣","赤柱","大潭","石澳","Pok Fu Lam","Aberdeen","Ap Lei Chau","Wong Chuk Hang","Repulse Bay","Stanley","Tai Tam","Shek O"],
-"油尖旺":["油尖旺","尖沙咀","佐敦","油麻地","旺角","大角咀","Tsim Sha Tsui","Jordan","Yau Ma Tei","Mong Kok","Tai Kok Tsui"],
-"深水埗":["深水埗","長沙灣","荔枝角","石硤尾","Sham Shui Po","Cheung Sha Wan","Lai Chi Kok","Shek Kip Mei"],
-"九龍城":["九龍城","紅磡","土瓜灣","何文田","九龍塘","Kowloon City","Hung Hom","To Kwa Wan","Ho Man Tin","Kowloon Tong"],
-"黃大仙":["黃大仙","鑽石山","新蒲崗","樂富","彩虹","Wong Tai Sin","Diamond Hill","San Po Kong","Lok Fu","Choi Hung"],
-"觀塘":["觀塘","牛頭角","九龍灣","藍田","油塘","Kwun Tong","Ngau Tau Kok","Kowloon Bay","Lam Tin","Yau Tong"],
-"荃灣":["荃灣","Tsuen Wan"],
-"屯門":["屯門","Tuen Mun"],
-"元朗":["元朗","天水圍","Yuen Long","Tin Shui Wai"],
-"北區":["上水","粉嶺","Sheung Shui","Fanling"],
-"大埔":["大埔","Tai Po"],
-"沙田":["沙田","馬鞍山","火炭","Sha Tin","Ma On Shan","Fo Tan"],
-"西貢":["西貢","將軍澳","Sai Kung","Tseung Kwan O"],
-"葵青":["葵涌","青衣","葵芳","Kwai Chung","Tsing Yi","Kwai Fong"],
-"離島":["東涌","長洲","大嶼山","梅窩","南丫島","坪洲","Tung Chung","Cheung Chau","Lantau","Mui Wo","Lamma","Peng Chau"]
+"中西區":["中西區","堅尼地城","石塘咀","西營盤","上環","中環","金鐘","半山","山頂","太平山","西環","蘇豪","蘭桂坊","太古廣場","Central and Western","Central District","Central, Hong Kong","Western District","Kennedy Town","Shek Tong Tsui","Sai Ying Pun","Sheung Wan","Admiralty","Mid-Levels","The Peak","Victoria Peak","Pacific Place","SoHo","Lan Kwai Fong"],
+"灣仔":["灣仔","銅鑼灣","跑馬地","大坑","掃桿埔","渣甸山","黃泥涌","禮頓山","摩理臣山","中環廣場","會展","Wan Chai","Wanchai","Causeway Bay","Happy Valley","Tai Hang","So Kon Po","Jardine's Lookout","Wong Nai Chung","Leighton Hill","Morrison Hill","Central Plaza","Convention Centre"],
+"東區":["東區","天后","寶馬山","北角","炮台山","鰂魚涌","太古城","太古坊","康怡","康山","西灣河","筲箕灣","愛秩序灣","柴灣","小西灣","杏花邨","Eastern District","Tin Hau","Braemar Hill","North Point","Fortress Hill","Quarry Bay","Taikoo Shing","Taikoo Place","Kornhill","Sai Wan Ho","Shau Kei Wan","Aldrich Bay","Chai Wan","Siu Sai Wan","Heng Fa Chuen"],
+"南區":["南區","薄扶林","香港仔","鴨脷洲","黃竹坑","淺水灣","深水灣","赤柱","大潭","石澳","數碼港","華富","田灣","石排灣","舂坎角","壽臣山","Southern District","Pok Fu Lam","Aberdeen","Ap Lei Chau","Wong Chuk Hang","Repulse Bay","Deep Water Bay","Stanley","Tai Tam","Shek O","Cyberport","Wah Fu","Tin Wan","Shek Pai Wan","Chung Hom Kok","Shouson Hill"],
+"油尖旺":["油尖旺","尖沙咀","尖東","佐敦","油麻地","旺角","大角咀","太子","京士柏","九龍公園","柯士甸","奧運","Yau Tsim Mong","Tsim Sha Tsui","Tsimshatsui","TST East","Jordan","Yau Ma Tei","Mong Kok","Mongkok","Tai Kok Tsui","Prince Edward","King's Park","Kowloon Park","Austin Road","Olympic Station"],
+"深水埗":["深水埗","長沙灣","荔枝角","石硤尾","又一村","美孚","南昌","白田","大坑東","昂船洲","Sham Shui Po","Cheung Sha Wan","Lai Chi Kok","Shek Kip Mei","Yau Yat Chuen","Mei Foo","Nam Cheong","Pak Tin","Tai Hang Tung","Stonecutters Island"],
+"九龍城":["九龍城","紅磡","土瓜灣","何文田","九龍塘","啟德","馬頭圍","馬頭涌","黃埔","筆架山","宋皇臺","Kowloon City","Hung Hom","To Kwa Wan","Ho Man Tin","Kowloon Tong","Kai Tak","Ma Tau Wai","Ma Tau Chung","Whampoa","Beacon Hill","Sung Wong Toi"],
+"黃大仙":["黃大仙","鑽石山","新蒲崗","樂富","彩虹","彩雲","慈雲山","竹園","牛池灣","橫頭磡","東頭","飛鵝山","志蓮","Wong Tai Sin","Diamond Hill","San Po Kong","Lok Fu","Choi Hung","Choi Wan","Tsz Wan Shan","Chuk Yuen","Ngau Chi Wan","Wang Tau Hom","Tung Tau","Fei Ngo Shan","Chi Lin"],
+"觀塘":["觀塘","牛頭角","九龍灣","藍田","油塘","秀茂坪","佐敦谷","麗港城","淘大花園","德福花園","順利","順天","Kwun Tong","Ngau Tau Kok","Kowloon Bay","Lam Tin","Yau Tong","Sau Mau Ping","Jordan Valley","Laguna City","Amoy Gardens","Telford Gardens","Shun Lee","Shun Tin"],
+"荃灣":["荃灣","梨木樹","深井","汀九","馬灣","青龍頭","大帽山","柴灣角","Tsuen Wan","Lei Muk Shue","Sham Tseng","Ting Kau","Ma Wan","Tsing Lung Tau","Tai Mo Shan","Chai Wan Kok"],
+"屯門":["屯門","藍地","掃管笏","龍鼓灘","小欖","田景","良景","蝴蝶灣","新墟","友愛","兆康","大興","景峰","山景","三聖","黃金海岸","Tuen Mun","Lam Tei","So Kwun Wat","Lung Kwu Tan","Siu Lam","Tin King","Leung King","Butterfly Bay","Siu Hong","Tai Hing","Shan King","Sam Shing","Gold Coast"],
+"元朗":["元朗","天水圍","洪水橋","錦田","八鄉","屏山","廈村","新田","流浮山","十八鄉","石崗","大棠","朗屏","形點","米埔","Yuen Long","Tin Shui Wai","Hung Shui Kiu","Kam Tin","Pat Heung","Ping Shan","Ha Tsuen","San Tin","Lau Fau Shan","Shek Kong","Tai Tong","Long Ping","YOHO","Mai Po","Kam Sheung Road"],
+"北區":["北區","上水","粉嶺","沙頭角","打鼓嶺","古洞","坪輋","石湖墟","聯和墟","羅湖","文錦渡","香園圍","鹿頸","North District","Sheung Shui","Fanling","Sha Tau Kok","Ta Kwu Ling","Kwu Tung","Ping Che","Shek Wu Hui","Luen Wo Hui","Lo Wu","Man Kam To","Heung Yuen Wai","Luk Keng"],
+"大埔":["大埔","太和","林村","汀角","船灣","大尾篤","白石角","科學園","洞梓","大埔滘","Tai Po","Tai Wo","Lam Tsuen","Ting Kok","Plover Cove","Tai Mei Tuk","Pak Shek Kok","Science Park","Tai Po Kau"],
+"沙田":["沙田","馬鞍山","火炭","大圍","石門","馬料水","烏溪沙","沙田圍","第一城","沙角","田心","禾輋","瀝源","顯徑","西沙","中文大學","Sha Tin","Shatin","Ma On Shan","Fo Tan","Tai Wai","Shek Mun","Ma Liu Shui","Wu Kai Sha","City One","Sha Kok","Tin Sum","Wo Che","Lek Yuen","Hin Keng","Sai Sha","Chinese University of Hong Kong"],
+"西貢":["西貢","將軍澳","坑口","寶琳","調景嶺","康城","清水灣","大網仔","北潭涌","白沙灣","布袋澳","糧船灣","Sai Kung","Tseung Kwan O","Hang Hau","Po Lam","Tiu Keng Leng","LOHAS Park","Clear Water Bay","Tai Mong Tsai","Pak Tam Chung","Pak Sha Wan","Hebe Haven","Ho Chung"],
+"葵青":["葵青","葵涌","青衣","葵芳","荔景","大窩口","石籬","葵興","石蔭","葵盛","安蔭","長宏","長亨","青衣城","Kwai Tsing","Kwai Chung","Tsing Yi","Kwai Fong","Lai King","Tai Wo Hau","Shek Lei","Kwai Hing","Shek Yam","Kwai Shing","On Yam","Cheung Hang","Cheung Hong","Maritime Square"],
+"離島":["離島","東涌","長洲","大嶼山","梅窩","南丫島","坪洲","愉景灣","大澳","昂坪","赤鱲角","香港國際機場","榕樹灣","索罟灣","東平洲","貝澳","塘福","欣澳","迪士尼","Islands District","Tung Chung","Cheung Chau","Lantau","Mui Wo","Lamma","Peng Chau","Discovery Bay","Ngong Ping","Chek Lap Kok","Hong Kong International Airport","Yung Shue Wan","Sok Kwu Wan","Tung Ping Chau","Pui O","Tong Fuk","Sunny Bay","Disneyland"]
 };
 function detectDistrict(addr){
   const s=addr.toLowerCase();let best=null,len=0;
@@ -261,7 +261,7 @@ function fillSelect(el,items,first){
 }
 fillSelect($("rvDistrict"),DISTRICTS,"全部地區");
 fillSelect($("fDistrict"),DISTRICTS,"全部地區");
-fillSelect($("nDistrict"),DISTRICTS);
+fillSelect($("nDistrict"),DISTRICTS,"請選擇地區");
 fillSelect($("mDistrict"),DISTRICTS,"全部地區");
 fillSelect($("choiceDistrict"),DISTRICTS,"全部地區");
 $("ratingPicker").innerHTML=Array.from({length:5},()=>'<span class="rating-star"><span>☆</span></span>').join("");
@@ -501,12 +501,14 @@ window.fixCoords=async id=>{
 $("saveRest").onclick=async()=>{
   if(!needMe())return;
   const name=$("nName").value.trim(),gm=$("nMap").value.trim(),or=$("nOR").value.trim(),ll=$("nLL").value.trim();
+  const district=$("nDistrict").value;
   if(!name||!gm)return alert("餐廳名稱同 Google Maps 連結必填");
+  if(!district)return alert("請選擇餐廳地區");
   if(!/^https?:\/\//.test(gm)||(or&&!/^https?:\/\//.test(or)))return alert("連結要以 http 或 https 開頭");
   let c=null;
   if(ll){c=parseLL(ll);if(!c)return alert("座標格式：緯度,經度（例如 22.3193,114.1694）");}
   else{try{c=await coordsFromLink(gm);}catch(e){}}
-  const data={name,district:$("nDistrict").value,address:$("nAddr").value.trim(),gmap:gm,openrice:or,addedBy:me,ts:serverTimestamp()};
+  const data={name,district,address:$("nAddr").value.trim(),gmap:gm,openrice:or,addedBy:me,ts:serverTimestamp()};
   if(c){data.lat=c.lat;data.lng=c.lng;}
   await addDoc(collection(db,"restaurants"),data);
   ["nName","nAddr","nMap","nOR","nLL"].forEach(i=>$(i).value="");
