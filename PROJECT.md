@@ -49,7 +49,7 @@
 - 餐廳名稱由用戶手動輸入。Google Maps 短連結無法在瀏覽器內解析名稱（CORS），故不自動讀取。
 - 新增餐廳時可貼上地址，App 會以地址中的中英文地區名稱自動選擇 18 區；判斷失敗時可手動修改地區。判斷只在前端完成，不依賴外部 API 或 API key。
 - 外觀：可手動切換深色／淺色模式，選擇存在瀏覽器 `localStorage`；首次使用時跟隨系統外觀設定。
-- 地圖：以 Leaflet／OpenStreetMap 顯示有座標的餐廳，可按地區或今日候選篩選；新增餐廳時可輸入座標，亦可嘗試由 Google Maps 連結讀取。讀取失敗時可在餐廳清單手動補座標。
+- 地圖：以 Leaflet／OpenStreetMap 顯示有座標的餐廳，可按地區或今日候選篩選；新增餐廳時可輸入座標，亦可嘗試由 Google Maps 連結讀取。讀取失敗時可在餐廳清單手動補座標。用戶可使用瀏覽器定位查看自己位置，並在餐廳彈窗查看直線距離。
 
 ## 6. Security Rules（現況）
 - 無登入，規則對大部分集合開放讀寫；餐廳建立及更新會檢查名稱、Google Maps 連結及可選座標範圍；食評建立及更新會檢查星數。
@@ -96,6 +96,7 @@
 ## 11. Changelog（最新在最上，每次改動都要新增）
 格式：`YYYY-MM-DD | 改動者（AI 名稱或人） | 檔案 | 改了什麼 | 為什麼 | 是否需重新部署`
 
+- 2026-10-09 | GitHub Copilot | `index.html`、`PROJECT.md` | 地圖加入「我的位置」定位按鈕、位置精度圈及餐廳直線距離 | 方便用戶比較自己與餐廳的位置 | 需 push 到 GitHub；不需 deploy rules
 - 2026-10-09 | GitHub Copilot | `index.html`、`PROJECT.md` | 設定 Apps Script Web App `/exec` 端點，更新短連結功能的限制與待測事項 | 啟用 Google Maps 短連結展開 | 需 push 到 GitHub；不需 deploy rules
 - 2026-10-09 | GitHub Copilot | `index.html`、`firestore.rules`、`PROJECT.md` | 新增 Leaflet／OpenStreetMap 餐廳地圖、地區及今日候選篩選、座標輸入與補登；餐廳規則加入座標範圍驗證並允許更新 | 方便查看餐廳位置並補齊座標 | 需 push 到 GitHub 及 deploy rules；短連結展開須先設定 Apps Script `/exec` 網址
 - 2026-10-09 | GitHub Copilot | `index.html`、`PROJECT.md` | 新增深色／淺色模式切換，首次使用跟隨系統外觀並保存用戶選擇 | 提供較舒適的夜間瀏覽外觀 | 需 push 到 GitHub；不需 deploy rules

@@ -92,6 +92,7 @@ a{color:var(--link)}
 <h3>餐廳地圖</h3>
 <select id="mDistrict"></select>
 <label><input type="checkbox" id="mToday" style="width:auto"> 只顯示今日候選</label>
+<button id="locBtn" type="button">我的位置</button>
 <div id="mapBox"></div>
 <div class="small" id="mapNote"></div>
 </section>
@@ -253,16 +254,37 @@ function parseLL(t){
   return(lat>=-90&&lat<=90&&lng>=-180&&lng<=180)?{lat,lng}:null;
 }
 
-let map=null,layer=null;
+let map=null,layer=null,meLayer=null,myLL=null;
 function showMap(){
   if(!window.L){$("mapNote").textContent="地圖程式庫載入失敗";return;}
   if(!map){
     map=L.map("mapBox").setView([22.32,114.17],11);
     L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
     layer=L.layerGroup().addTo(map);
+    meLayer=L.layerGroup().addTo(map);
+    map.on("locationfound",onFound);
+    map.on("locationerror",onLocErr);
   }
   setTimeout(()=>{map.invalidateSize();drawMap(true);},0);
 }
+function resetLocBtn(){$("locBtn").disabled=false;$("locBtn").textContent="我的位置";}
+function onFound(e){
+  myLL=e.latlng;
+  meLayer.clearLayers();
+  L.circle(e.latlng,{radius:e.accuracy,color:"#1a73e8",weight:1,fillOpacity:0.1}).addTo(meLayer);
+  L.circleMarker(e.latlng,{radius:8,color:"#fff",weight:2,fillColor:"#1a73e8",fillOpacity:1}).addTo(meLayer).bindPopup("你喺呢度（誤差約 "+Math.round(e.accuracy)+" 米）");
+  resetLocBtn();
+  drawMap(false);
+}
+function onLocErr(e){
+  resetLocBtn();
+  alert("搵唔到你嘅位置："+e.message+"\n請確認已允許瀏覽器使用位置，並開啟手機定位服務。");
+}
+$("locBtn").onclick=()=>{
+  if(!map)return;
+  $("locBtn").disabled=true;$("locBtn").textContent="定位中…";
+  map.locate({setView:true,maxZoom:16,enableHighAccuracy:true,timeout:10000});
+};
 function drawMap(fit){
   if(!map)return;
   layer.clearLayers();
@@ -273,7 +295,9 @@ function drawMap(fit){
   const pts=[];
   withLL.forEach(r=>{
     const s=stats(r.id);
-    const html=`<b>${esc(r.name)}</b>（${esc(r.district)}）<br>${s.n?esc(s.avg)+" 星・"+s.n+" 則食評":"未有評分"}<br><a href="${esc(r.gmap)}" target="_blank" rel="noopener">Google Maps</a>${r.openrice?` | <a href="${esc(r.openrice)}" target="_blank" rel="noopener">OpenRice</a>`:""}`;
+    const dist=myLL?map.distance(myLL,[r.lat,r.lng]):null;
+    const dtxt=dist==null?"":`<br>距離你約 ${dist<1000?Math.round(dist)+" 米":(dist/1000).toFixed(1)+" 公里"}（直線）`;
+    const html=`<b>${esc(r.name)}</b>（${esc(r.district)}）<br>${s.n?esc(s.avg)+" 星・"+s.n+" 則食評":"未有評分"}${dtxt}<br><a href="${esc(r.gmap)}" target="_blank" rel="noopener">Google Maps</a>${r.openrice?` | <a href="${esc(r.openrice)}" target="_blank" rel="noopener">OpenRice</a>`:""}`;
     L.marker([r.lat,r.lng]).addTo(layer).bindPopup(html);
     pts.push([r.lat,r.lng]);
   });
