@@ -6,9 +6,15 @@ service cloud.firestore {
     }
     match /restaurants/{id} {
       allow read, delete: if true;
-      allow create: if request.resource.data.name is string
+      allow create, update: if request.resource.data.name is string
         && request.resource.data.name.size() < 60
-        && request.resource.data.gmap is string;
+        && request.resource.data.gmap is string
+        && (!('lat' in request.resource.data) ||
+            (request.resource.data.lat is number
+             && request.resource.data.lat >= -90 && request.resource.data.lat <= 90))
+        && (!('lng' in request.resource.data) ||
+            (request.resource.data.lng is number
+             && request.resource.data.lng >= -180 && request.resource.data.lng <= 180));
     }
     match /reviews/{id} {
       allow read, delete: if true;

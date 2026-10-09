@@ -16,6 +16,7 @@
 - 前端：單一 `index.html`（HTML + CSS + JavaScript module），無 build step。
 - 後端：Firebase Cloud Firestore（Spark 免費方案，不綁定付款方式）。
 - SDK：Firebase JS SDK 10.12.0，由 `gstatic.com` CDN 載入。
+- 地圖：Leaflet 1.9.4 及 OpenStreetMap tiles；Google Maps 短連結由 Apps Script Web App 展開。
 - 部署：GitHub Pages（公開儲存庫，Branch `main`，資料夾 root）。
 - 規則部署：Firebase CLI（`npx firebase-tools deploy --only firestore:rules`）。
 - 開發環境：VS Code + GitHub Copilot。
@@ -30,7 +31,7 @@
 
 ## 4. Data Model（Firestore）
 - `members/{autoId}`：`name`（string）、`ts`。用戶名單，用於下拉選單。
-- `restaurants/{autoId}`：`name`、`district`（18 區之一）、`address`（選填，地址文字）、`gmap`（Google Maps 連結，必填）、`openrice`（選填）、`addedBy`、`ts`。
+- `restaurants/{autoId}`：`name`、`district`（18 區之一）、`address`（選填，地址文字）、`gmap`（Google Maps 連結，必填）、`openrice`（選填）、`lat`／`lng`（選填，數字座標）、`addedBy`、`ts`。
 - `reviews/{autoId}`：`restId`、`rating`（整數 0–5）、`text`、`by`、`editedBy`（選填）、`ts`。
 - `days/{YYYY-MM-DD}`：`closed`（boolean）、`winner`（restaurant ID 或 `"any"`）。
 - `days/{date}/intents/{成員名字}`：`name`、`joining`（boolean）、`choice`（restaurant ID 或 `"any"`，不參加時為空字串）、`ts`。
@@ -48,9 +49,10 @@
 - 餐廳名稱由用戶手動輸入。Google Maps 短連結無法在瀏覽器內解析名稱（CORS），故不自動讀取。
 - 新增餐廳時可貼上地址，App 會以地址中的中英文地區名稱自動選擇 18 區；判斷失敗時可手動修改地區。判斷只在前端完成，不依賴外部 API 或 API key。
 - 外觀：可手動切換深色／淺色模式，選擇存在瀏覽器 `localStorage`；首次使用時跟隨系統外觀設定。
+- 地圖：以 Leaflet／OpenStreetMap 顯示有座標的餐廳，可按地區或今日候選篩選；新增餐廳時可輸入座標，亦可嘗試由 Google Maps 連結讀取。讀取失敗時可在餐廳清單手動補座標。
 
 ## 6. Security Rules（現況）
-- 無登入，規則對大部分集合開放讀寫，只對餐廳建立及食評星數做格式檢查。
+- 無登入，規則對大部分集合開放讀寫；餐廳建立及更新會檢查名稱、Google Maps 連結及可選座標範圍；食評建立及更新會檢查星數。
 - 用戶已接受此風險。保護方式只有「不公開網址」。
 - 「只可刪自己的食評」等權限無法在無登入下於伺服器端強制。
 
@@ -64,6 +66,7 @@
 - 平手時隨機決定勝出者。
 - 推送提醒（11:55）延後，因 Cloud Functions 排程需要 Blaze 付費方案。
 - 日後需要可移交：設定集中在 `firebaseConfig`，Firebase 以 Owner 角色移交，GitHub 儲存庫用 Transfer。
+- Apps Script 只用於展開 Google Maps 短連結，不取代 Firebase 作為資料後端。
 
 ## 8. Setup Summary（給新接手者）
 1. Firebase Console 建立專案，註冊 Web App，複製 `firebaseConfig` 到 `index.html`。
@@ -80,6 +83,7 @@
 - 未做 PWA manifest 及離線支援。
 - 代碼未經真實環境完整測試（以首次部署結果為準）。
 - 沒有自動刪除舊的 `days` 資料。
+- Apps Script `EXPAND_URL` 已設定；短連結展開仍需配合已部署的 Apps Script Web App 正常回傳 JSON。沒有座標的餐廳不會出現在地圖標記中。
 
 ## 10. TODO / Ideas
 - PWA manifest 及圖示（加入主畫面體驗）。
@@ -87,10 +91,13 @@
 - 推送提醒（需升級 Blaze，可由用戶關閉）。
 - 清理舊 `days` 資料的方法。
 - 重複餐廳檢查（以 Google Maps 連結比對）。
+- 測試 Apps Script 短連結展開及地圖座標讀取。
 
 ## 11. Changelog（最新在最上，每次改動都要新增）
 格式：`YYYY-MM-DD | 改動者（AI 名稱或人） | 檔案 | 改了什麼 | 為什麼 | 是否需重新部署`
 
+- 2026-10-09 | GitHub Copilot | `index.html`、`PROJECT.md` | 設定 Apps Script Web App `/exec` 端點，更新短連結功能的限制與待測事項 | 啟用 Google Maps 短連結展開 | 需 push 到 GitHub；不需 deploy rules
+- 2026-10-09 | GitHub Copilot | `index.html`、`firestore.rules`、`PROJECT.md` | 新增 Leaflet／OpenStreetMap 餐廳地圖、地區及今日候選篩選、座標輸入與補登；餐廳規則加入座標範圍驗證並允許更新 | 方便查看餐廳位置並補齊座標 | 需 push 到 GitHub 及 deploy rules；短連結展開須先設定 Apps Script `/exec` 網址
 - 2026-10-09 | GitHub Copilot | `index.html`、`PROJECT.md` | 新增深色／淺色模式切換，首次使用跟隨系統外觀並保存用戶選擇 | 提供較舒適的夜間瀏覽外觀 | 需 push 到 GitHub；不需 deploy rules
 - 2026-10-09 | AI | `index.html`、`PROJECT.md` | 在「今日」午餐選擇前加入地區篩選，並顯示候選餐廳的平均星數及食評數 | 讓用戶更快篩選地區及比較餐廳評價 | 需 push 到 GitHub；不需 deploy rules
 - 2026-10-08 | AI | `index.html`、`PROJECT.md` | 新增餐廳地址欄位及前端中英文地區名稱對照，自動判斷 18 區並可手動覆蓋；地址會寫入 Firestore | 讓地址可直接辨識地區，避免額外 API 與 API key | 需 push 到 GitHub；不需 deploy rules

@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>食乜好</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 :root{color-scheme:light;--page:#fafafa;--surface:#fff;--text:#222;--muted:#666;--border:#ddd;--line:#eee;--control:#fff;--accent:#222;--accent-text:#fff;--link:#0057a8}
 :root[data-theme="dark"]{color-scheme:dark;--page:#17191b;--surface:#222629;--text:#edf0f2;--muted:#abb2b8;--border:#444b50;--line:#353b40;--control:#2b3034;--accent:#edf0f2;--accent-text:#17191b;--link:#91c4ff}
@@ -20,6 +22,8 @@ input,select,textarea,button{font-size:16px;padding:8px;margin:4px 0;width:100%;
 input[type="radio"]{accent-color:var(--link)}
 button{cursor:pointer}
 a{color:var(--link)}
+#mapBox{height:60vh;min-height:320px}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--surface);color:var(--text)}
 .row{display:flex;gap:6px}
 .card{border-bottom:1px solid var(--line);padding:8px 0}
 .small{color:var(--muted);font-size:13px}
@@ -39,6 +43,7 @@ a{color:var(--link)}
 <button data-t="today" class="on">今日</button>
 <button data-t="review">食評</button>
 <button data-t="list">餐廳</button>
+<button data-t="mapSec">地圖</button>
 </nav>
 
 <section id="today" class="on">
@@ -79,7 +84,16 @@ a{color:var(--link)}
 <div class="small" id="distHint"></div>
 <input id="nMap" placeholder="Google Maps 連結（必填）">
 <input id="nOR" placeholder="OpenRice 連結（選填）">
+<input id="nLL" placeholder="座標（選填）例如 22.3193,114.1694">
 <button id="saveRest">新增</button>
+</section>
+
+<section id="mapSec">
+<h3>餐廳地圖</h3>
+<select id="mDistrict"></select>
+<label><input type="checkbox" id="mToday" style="width:auto"> 只顯示今日候選</label>
+<div id="mapBox"></div>
+<div class="small" id="mapNote"></div>
 </section>
 
 <script type="module">
@@ -153,12 +167,14 @@ function fillSelect(el,items,first){
 fillSelect($("rvDistrict"),DISTRICTS,"全部地區");
 fillSelect($("fDistrict"),DISTRICTS,"全部地區");
 fillSelect($("nDistrict"),DISTRICTS);
+fillSelect($("mDistrict"),DISTRICTS,"全部地區");
 fillSelect($("choiceDistrict"),DISTRICTS,"全部地區");
 $("rvStar").innerHTML=[0,1,2,3,4,5].map(n=>`<option value="${n}" ${n==3?"selected":""}>${n} 星</option>`).join("");
 
 document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
   document.querySelectorAll("nav button,section").forEach(e=>e.classList.remove("on"));
   b.classList.add("on");$(b.dataset.t).classList.add("on");
+  if(b.dataset.t==="mapSec")showMap();
 });
 const goList=()=>document.querySelector('[data-t="list"]').click();
 $("addRestBtn1").onclick=goList;$("addRestBtn2").onclick=goList;
@@ -214,14 +230,86 @@ $("saveIntent").onclick=async()=>{
   await setDoc(doc(db,"days",dayKey,"intents",me),{name:me,joining:j.value==="yes",choice:j.value==="yes"?($("choice").value||"any"):"",ts:serverTimestamp()});
 };
 
+const EXPAND_URL="https://script.google.com/macros/s/AKfycbzzAJ2IIf2kEUrIOB3Jsiq-NGiVvsEro790xwLul8VmjUAxRHTCJ0gfrZNkz9V6i1ukRQ/exec";
+
+async function expandUrl(u){
+  if(!/maps\.app\.goo\.gl|goo\.gl\/maps/.test(u))return u;
+  if(!EXPAND_URL.startsWith("https://"))throw new Error("未設定 EXPAND_URL");
+  const r=await fetch(EXPAND_URL+"?u="+encodeURIComponent(u));
+  const j=await r.json();
+  if(!j.url)throw new Error("展開失敗");
+  return j.url;
+}
+function parseCoords(u){
+  let s=u;try{s=decodeURIComponent(u);}catch(e){}
+  const m=s.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/)||s.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)||s.match(/[?&](?:q|query|ll)=(-?\d+\.\d+),(-?\d+\.\d+)/);
+  return m?{lat:+m[1],lng:+m[2]}:null;
+}
+async function coordsFromLink(u){return parseCoords(await expandUrl(u));}
+function parseLL(t){
+  const m=t.match(/(-?\d+(?:\.\d+)?)\s*[,，]\s*(-?\d+(?:\.\d+)?)/);
+  if(!m)return null;
+  const lat=+m[1],lng=+m[2];
+  return(lat>=-90&&lat<=90&&lng>=-180&&lng<=180)?{lat,lng}:null;
+}
+
+let map=null,layer=null;
+function showMap(){
+  if(!window.L){$("mapNote").textContent="地圖程式庫載入失敗";return;}
+  if(!map){
+    map=L.map("mapBox").setView([22.32,114.17],11);
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
+    layer=L.layerGroup().addTo(map);
+  }
+  setTimeout(()=>{map.invalidateSize();drawMap(true);},0);
+}
+function drawMap(fit){
+  if(!map)return;
+  layer.clearLayers();
+  const d=$("mDistrict").value,onlyToday=$("mToday").checked;
+  const todayIds=new Set(S.intents.filter(i=>i.joining&&i.choice&&i.choice!=="any").map(i=>i.choice));
+  const list=S.rests.filter(r=>(!d||r.district===d)&&(!onlyToday||todayIds.has(r.id)));
+  const withLL=list.filter(r=>typeof r.lat==="number"&&typeof r.lng==="number");
+  const pts=[];
+  withLL.forEach(r=>{
+    const s=stats(r.id);
+    const html=`<b>${esc(r.name)}</b>（${esc(r.district)}）<br>${s.n?esc(s.avg)+" 星・"+s.n+" 則食評":"未有評分"}<br><a href="${esc(r.gmap)}" target="_blank" rel="noopener">Google Maps</a>${r.openrice?` | <a href="${esc(r.openrice)}" target="_blank" rel="noopener">OpenRice</a>`:""}`;
+    L.marker([r.lat,r.lng]).addTo(layer).bindPopup(html);
+    pts.push([r.lat,r.lng]);
+  });
+  if(fit&&pts.length)map.fitBounds(pts,{padding:[30,30],maxZoom:16});
+  $("mapNote").textContent=`顯示 ${withLL.length} 間；冇座標：${list.length-withLL.length} 間（喺「餐廳」頁按「補座標」）`;
+}
+$("mDistrict").onchange=()=>drawMap(true);
+$("mToday").onchange=()=>drawMap(true);
+
+window.fixCoords=async id=>{
+  const r=S.rests.find(x=>x.id===id);if(!r)return;
+  let c=null;
+  try{c=await coordsFromLink(r.gmap);}catch(e){}
+  if(!c){
+    const t=prompt("自動讀取失敗。請輸入座標（緯度,經度），例如 22.3193,114.1694");
+    if(!t)return;
+    c=parseLL(t);
+    if(!c)return alert("格式不正確");
+  }
+  await updateDoc(doc(db,"restaurants",id),{lat:c.lat,lng:c.lng});
+};
+
 $("saveRest").onclick=async()=>{
   if(!needMe())return;
-  const name=$("nName").value.trim(),map=$("nMap").value.trim(),or=$("nOR").value.trim();
-  if(!name||!map)return alert("餐廳名稱同 Google Maps 連結必填");
-  if(!/^https?:\/\//.test(map)||(or&&!/^https?:\/\//.test(or)))return alert("連結要以 http 或 https 開頭");
-  await addDoc(collection(db,"restaurants"),{name,district:$("nDistrict").value,address:$("nAddr").value.trim(),gmap:map,openrice:or,addedBy:me,ts:serverTimestamp()});
-  ["nName","nAddr","nMap","nOR"].forEach(i=>$(i).value="");
+  const name=$("nName").value.trim(),gm=$("nMap").value.trim(),or=$("nOR").value.trim(),ll=$("nLL").value.trim();
+  if(!name||!gm)return alert("餐廳名稱同 Google Maps 連結必填");
+  if(!/^https?:\/\//.test(gm)||(or&&!/^https?:\/\//.test(or)))return alert("連結要以 http 或 https 開頭");
+  let c=null;
+  if(ll){c=parseLL(ll);if(!c)return alert("座標格式：緯度,經度（例如 22.3193,114.1694）");}
+  else{try{c=await coordsFromLink(gm);}catch(e){}}
+  const data={name,district:$("nDistrict").value,address:$("nAddr").value.trim(),gmap:gm,openrice:or,addedBy:me,ts:serverTimestamp()};
+  if(c){data.lat=c.lat;data.lng=c.lng;}
+  await addDoc(collection(db,"restaurants"),data);
+  ["nName","nAddr","nMap","nOR","nLL"].forEach(i=>$(i).value="");
   $("distHint").textContent="";
+  if(!c)alert("已新增，但讀唔到座標，地圖上唔會顯示。可喺餐廳清單按「補座標」。");
 };
 
 $("saveReview").onclick=async()=>{
@@ -303,9 +391,10 @@ function render(){
   $("voteBox").innerHTML=h;
 
   const f=$("fDistrict").value;
-  $("rests").innerHTML=S.rests.filter(r=>!f||r.district===f).map(r=>{const s=stats(r.id);return `<div class="card"><b>${esc(r.name)}</b>（${esc(r.district)}）<br>平均 ${s.avg} 星・${s.n} 則食評<br><a href="${esc(r.gmap)}" target="_blank" rel="noopener">Google Maps</a>${r.openrice?` | <a href="${esc(r.openrice)}" target="_blank" rel="noopener">OpenRice</a>`:""} | <a href="#" onclick="delRest('${r.id}');return false">刪除</a></div>`}).join("")||"未有餐廳";
+  $("rests").innerHTML=S.rests.filter(r=>!f||r.district===f).map(r=>{const s=stats(r.id);return `<div class="card"><b>${esc(r.name)}</b>（${esc(r.district)}）<br>平均 ${s.avg} 星・${s.n} 則食評<br><a href="${esc(r.gmap)}" target="_blank" rel="noopener">Google Maps</a>${r.openrice?` | <a href="${esc(r.openrice)}" target="_blank" rel="noopener">OpenRice</a>`:""}${typeof r.lat==="number"?"":` | <a href="#" onclick="fixCoords('${r.id}');return false">補座標</a>`} | <a href="#" onclick="delRest('${r.id}');return false">刪除</a></div>`}).join("")||"未有餐廳";
 
   $("reviews").innerHTML=S.reviews.map(r=>`<div class="card"><b>${esc(rName(r.restId))}</b>　${"★".repeat(r.rating)}${"☆".repeat(5-r.rating)}<br>${esc(r.text)}<div class="small">${esc(r.by)}${r.editedBy?"（"+esc(r.editedBy)+" 已修改）":""} <a href="#" onclick="editReview('${r.id}');return false">修改</a> <a href="#" onclick="delReview('${r.id}');return false">刪除</a></div></div>`).join("")||"未有食評";
+  if(map&&$("mapSec").classList.contains("on"))drawMap(false);
 }
 $("fDistrict").onchange=render;$("rvDistrict").onchange=render;$("choiceDistrict").onchange=render;
 $("nAddr").oninput=()=>{
