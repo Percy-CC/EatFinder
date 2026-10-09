@@ -46,7 +46,7 @@
 - 投票：每人一票，可改票；按「截止投票」後，由按下的客戶端計票，平手時隨機抽一個，寫入 `days/{date}.winner`。可「重開投票」。
 - 餐廳：任何人可新增及刪除。刪除餐廳時，同時批次刪除該餐廳所有食評。地區（18 區）可用作篩選。
 - 食評：所有人可見；任何人可修改及刪除任何人的食評。餐廳頁顯示平均星數及食評數。
-- 新增餐廳時可按「自動讀取名稱、座標及地區」，由 Apps Script 讀取 Google Maps 連結資料；用戶可在新增前手動修改讀取結果。原本的短連結展開功能仍由 `expandUrl` 負責。
+- 新增餐廳時可按「自動讀取名稱、座標及地區」，由 Apps Script 讀取 Google Maps 連結資料；如有地址會填入地址欄並觸發地區判斷。用戶可在新增前手動修改讀取結果。原本的短連結展開功能仍由 `expandUrl` 負責。
 - 新增餐廳時可貼上地址，App 會以地址中的中英文地區名稱自動選擇 18 區；判斷失敗時可手動修改地區。判斷只在前端完成，不依賴外部 API 或 API key。
 - 外觀：可手動切換深色／淺色模式，選擇存在瀏覽器 `localStorage`；首次使用時跟隨系統外觀設定。
 - 地圖：以 Leaflet／OpenStreetMap 顯示有座標的餐廳，可按地區或今日候選篩選；新增餐廳時可由 Google Maps 連結自動讀取座標，讀取失敗時可在餐廳清單手動補座標。用戶可使用瀏覽器定位查看自己位置，並在餐廳彈窗查看直線距離。
@@ -96,6 +96,7 @@
 ## 11. Changelog（最新在最上，每次改動都要新增）
 格式：`YYYY-MM-DD | 改動者（AI 名稱或人） | 檔案 | 改了什麼 | 為什麼 | 是否需重新部署`
 
+- 2026-10-09 | GitHub Copilot | `index.html`、`PROJECT.md` | 自動讀取 Google Maps 資料時，如回傳地址便自動填入地址欄並觸發地區判斷 | 減少新增餐廳時重複輸入地址及地區 | 需 push 到 GitHub；不需 deploy rules
 - 2026-10-09 | GitHub Copilot | `index.html`、`PROJECT.md` | 新增餐廳表單將 Google Maps 連結移到最前，隱藏座標輸入欄並保留程式自動讀取 | 簡化新增表單，避免手動輸入座標 | 需 push 到 GitHub；不需 deploy rules
 - 2026-10-09 | GitHub Copilot | `index.html`、`PROJECT.md` | 新增由 Google Maps 連結自動讀取餐廳名稱、座標及地區的按鈕，並保留手動修改及原短連結展開功能 | 減少新增餐廳時手動輸入資料 | 需 push 到 GitHub；不需 deploy rules
 - 2026-10-09 | GitHub Copilot | `index.html`、`PROJECT.md` | 地圖加入「我的位置」定位按鈕、位置精度圈及餐廳直線距離 | 方便用戶比較自己與餐廳的位置 | 需 push 到 GitHub；不需 deploy rules

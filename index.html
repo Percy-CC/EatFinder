@@ -255,7 +255,11 @@ $("autoFill").onclick=async()=>{
     if(j.lat!=null){$("nLL").value=j.lat+","+j.lng;msg.push("座標："+j.lat+","+j.lng);}else msg.push("讀唔到座標");
     const d=districtFrom(j.address||"");
     if(d){$("nDistrict").value=d;msg.push("地區："+d);}else msg.push("讀唔到地區，請手動揀");
-    if(j.address)msg.push("地址："+j.address);
+    if(j.address){
+      $("nAddr").value=j.address;
+      $("nAddr").oninput();
+      msg.push("地址："+j.address);
+    }
   }catch(e){msg.push("讀取失敗："+e.message);}
   $("autoFill").disabled=false;
   alert(msg.join("\n")+"\n\n請檢查後再按「新增」。");
