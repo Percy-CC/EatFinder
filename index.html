@@ -24,6 +24,16 @@ button{cursor:pointer}
 a{color:var(--link)}
 #mapBox{height:60vh;min-height:320px}
 .leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--surface);color:var(--text)}
+.pin{width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center}
+.pin span{transform:rotate(45deg);color:#fff;font:bold 12px system-ui}
+.pin.today{box-shadow:0 0 0 3px #ffd400,0 1px 4px rgba(0,0,0,.5)}
+.mapSoft .leaflet-tile-pane{filter:saturate(.6) brightness(1.05)}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}
+.cal div{padding:6px 0;border:1px solid #eee;font-size:14px;min-height:40px}
+.cal .has{background:#e8f0fe;cursor:pointer;font-weight:bold}
+.cal .sel{background:#1a73e8;color:#fff}
+.cal .sel .small{color:#fff}
+.cal .tdy{box-shadow:inset 0 0 0 2px #ffd400}
 .row{display:flex;gap:6px}
 .card{border-bottom:1px solid var(--line);padding:8px 0}
 .small{color:var(--muted);font-size:13px}
@@ -70,7 +80,21 @@ a{color:var(--link)}
 <textarea id="rvText" rows="3" placeholder="食評（選填）"></textarea>
 <button id="saveReview">提交食評</button>
 <h3>最新食評</h3>
+<select id="pgSize">
+<option value="5">每頁 5 項</option>
+<option value="10">每頁 10 項</option>
+<option value="20">每頁 20 項</option>
+</select>
+<div class="small" id="dayFilter"></div>
 <div id="reviews"></div>
+<div class="row" id="pager"></div>
+<h3>食評日曆</h3>
+<div class="row">
+<button id="calPrev" style="width:auto">‹</button>
+<div id="calTitle" style="flex:1;text-align:center;align-self:center"></div>
+<button id="calNext" style="width:auto">›</button>
+</div>
+<div class="cal" id="calGrid"></div>
 </section>
 
 <section id="list">
@@ -97,13 +121,14 @@ a{color:var(--link)}
 <select id="mDistrict"></select>
 <label><input type="checkbox" id="mToday" style="width:auto"> 只顯示今日候選</label>
 <button id="locBtn" type="button">我的位置</button>
-<div id="mapBox"></div>
+<div class="small">釘點數字＝平均星數；綠色 4 星或以上、黃色 3–3.9、紅色低於 3、灰色＝未有評分；金色外框＝今日候選。</div>
+<div id="mapBox" class="mapSoft"></div>
 <div class="small" id="mapNote"></div>
 </section>
 
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import {getFirestore,collection,doc,setDoc,addDoc,updateDoc,deleteDoc,writeBatch,onSnapshot,serverTimestamp,query,orderBy} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import {getFirestore,collection,doc,setDoc,addDoc,updateDoc,deleteDoc,writeBatch,arrayUnion,arrayRemove,onSnapshot,serverTimestamp,query,orderBy} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCmDo6d8eHq9DNlpR0RToHKQ5_YbKa-Rys",
@@ -320,6 +345,15 @@ $("locBtn").onclick=()=>{
   $("locBtn").disabled=true;$("locBtn").textContent="定位中…";
   map.locate({setView:true,maxZoom:16,enableHighAccuracy:true,timeout:10000});
 };
+function pinIcon(avg,n,isToday){
+  const v=n?Number(avg):null;
+  const c=v===null?"#757575":v>=4?"#2e7d32":v>=3?"#f9a825":"#c62828";
+  return L.divIcon({
+    className:"",
+    html:`<div class="pin${isToday?" today":""}" style="background:${c}"><span>${n?v.toFixed(1):"?"}</span></div>`,
+    iconSize:[30,30],iconAnchor:[15,36],popupAnchor:[0,-34]
+  });
+}
 function drawMap(fit){
   if(!map)return;
   layer.clearLayers();
@@ -333,7 +367,7 @@ function drawMap(fit){
     const dist=myLL?map.distance(myLL,[r.lat,r.lng]):null;
     const dtxt=dist==null?"":`<br>距離你約 ${dist<1000?Math.round(dist)+" 米":(dist/1000).toFixed(1)+" 公里"}（直線）`;
     const html=`<b>${esc(r.name)}</b>（${esc(r.district)}）<br>${s.n?esc(s.avg)+" 星・"+s.n+" 則食評":"未有評分"}${dtxt}<br><a href="${esc(r.gmap)}" target="_blank" rel="noopener">Google Maps</a>${r.openrice?` | <a href="${esc(r.openrice)}" target="_blank" rel="noopener">OpenRice</a>`:""}`;
-    L.marker([r.lat,r.lng]).addTo(layer).bindPopup(html);
+    L.marker([r.lat,r.lng],{icon:pinIcon(s.avg,s.n,todayIds.has(r.id))}).addTo(layer).bindPopup(html);
     pts.push([r.lat,r.lng]);
   });
   if(fit&&pts.length)map.fitBounds(pts,{padding:[30,30],maxZoom:16});
@@ -394,6 +428,54 @@ window.delRest=async id=>{
   b.delete(doc(db,"restaurants",id));
   await b.commit();
 };
+let rvPage=1,selDay="";
+const t0=today().split("-");
+let calY=+t0[0],calM=+t0[1]-1;
+const dayOf=r=>r.ts&&r.ts.toDate?r.ts.toDate().toLocaleDateString("sv-SE",{timeZone:"Asia/Hong_Kong"}):today();
+
+window.toggleLike=async id=>{
+  if(!needMe())return;
+  const r=S.reviews.find(x=>x.id===id);if(!r)return;
+  const liked=(r.likes||[]).includes(me);
+  await updateDoc(doc(db,"reviews",id),{likes:liked?arrayRemove(me):arrayUnion(me)});
+};
+window.goPage=p=>{rvPage=p;renderReviews();};
+window.pickDay=k=>{selDay=(selDay===k)?"":k;rvPage=1;renderReviews();};
+window.clearDay=()=>{selDay="";rvPage=1;renderReviews();};
+$("pgSize").onchange=()=>{rvPage=1;renderReviews();};
+$("calPrev").onclick=()=>{calM--;if(calM<0){calM=11;calY--;}renderCal();};
+$("calNext").onclick=()=>{calM++;if(calM>11){calM=0;calY++;}renderCal();};
+
+function renderReviews(){
+  const size=Number($("pgSize").value)||5;
+  const all=selDay?S.reviews.filter(r=>dayOf(r)===selDay):S.reviews;
+  const pages=Math.max(1,Math.ceil(all.length/size));
+  if(rvPage>pages)rvPage=pages;
+  const part=all.slice((rvPage-1)*size,rvPage*size);
+  $("dayFilter").innerHTML=selDay?`顯示 ${esc(selDay)} 嘅食評（${all.length} 則） <a href="#" onclick="clearDay();return false">顯示全部</a>`:`共 ${all.length} 則食評`;
+  $("reviews").innerHTML=part.map(r=>{
+    const likes=r.likes||[],liked=likes.includes(me);
+    return `<div class="card"><b>${esc(rName(r.restId))}</b>　${"★".repeat(r.rating)}${"☆".repeat(5-r.rating)}<br>${esc(r.text)}<div class="small">${esc(r.by)}${r.editedBy?"（"+esc(r.editedBy)+" 已修改）":""}　${esc(dayOf(r))}　<a href="#" onclick="toggleLike('${r.id}');return false">${liked?"取消讚好":"讚好"}（${likes.length}）</a> <a href="#" onclick="editReview('${r.id}');return false">修改</a> <a href="#" onclick="delReview('${r.id}');return false">刪除</a></div></div>`;
+  }).join("")||"未有食評";
+  $("pager").innerHTML=`<button style="width:auto" ${rvPage<=1?"disabled":""} onclick="goPage(${rvPage-1})">上一頁</button><div style="flex:1;text-align:center;align-self:center">${rvPage} / ${pages}</div><button style="width:auto" ${rvPage>=pages?"disabled":""} onclick="goPage(${rvPage+1})">下一頁</button>`;
+  renderCal();
+}
+function renderCal(){
+  const counts={};
+  S.reviews.forEach(r=>{const k=dayOf(r);counts[k]=(counts[k]||0)+1;});
+  $("calTitle").textContent=`${calY} 年 ${calM+1} 月`;
+  const first=new Date(Date.UTC(calY,calM,1)).getUTCDay();
+  const days=new Date(Date.UTC(calY,calM+1,0)).getUTCDate();
+  const td=today();
+  let h=["日","一","二","三","四","五","六"].map(w=>`<div class="small">${w}</div>`).join("");
+  for(let i=0;i<first;i++)h+="<div></div>";
+  for(let d=1;d<=days;d++){
+    const k=`${calY}-${String(calM+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+    const n=counts[k]||0;
+    h+=`<div class="${n?"has":""}${k===selDay?" sel":""}${k===td?" tdy":""}" ${n?`onclick="pickDay('${k}')"`:""}>${d}${n?`<br><span class="small">${n}</span>`:""}</div>`;
+  }
+  $("calGrid").innerHTML=h;
+}
 window.delReview=async id=>{if(confirm("刪除呢個食評？"))await deleteDoc(doc(db,"reviews",id));};
 window.editReview=async id=>{
   const r=S.reviews.find(x=>x.id===id);if(!r)return;
@@ -458,7 +540,7 @@ function render(){
   const f=$("fDistrict").value;
   $("rests").innerHTML=S.rests.filter(r=>!f||r.district===f).map(r=>{const s=stats(r.id);return `<div class="card"><b>${esc(r.name)}</b>（${esc(r.district)}）<br>平均 ${s.avg} 星・${s.n} 則食評<br><a href="${esc(r.gmap)}" target="_blank" rel="noopener">Google Maps</a>${r.openrice?` | <a href="${esc(r.openrice)}" target="_blank" rel="noopener">OpenRice</a>`:""}${typeof r.lat==="number"?"":` | <a href="#" onclick="fixCoords('${r.id}');return false">補座標</a>`} | <a href="#" onclick="delRest('${r.id}');return false">刪除</a></div>`}).join("")||"未有餐廳";
 
-  $("reviews").innerHTML=S.reviews.map(r=>`<div class="card"><b>${esc(rName(r.restId))}</b>　${"★".repeat(r.rating)}${"☆".repeat(5-r.rating)}<br>${esc(r.text)}<div class="small">${esc(r.by)}${r.editedBy?"（"+esc(r.editedBy)+" 已修改）":""} <a href="#" onclick="editReview('${r.id}');return false">修改</a> <a href="#" onclick="delReview('${r.id}');return false">刪除</a></div></div>`).join("")||"未有食評";
+  renderReviews();
   if(map&&$("mapSec").classList.contains("on"))drawMap(false);
 }
 $("fDistrict").onchange=render;$("rvDistrict").onchange=render;$("choiceDistrict").onchange=render;

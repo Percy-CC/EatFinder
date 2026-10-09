@@ -20,7 +20,10 @@ service cloud.firestore {
       allow read, delete: if true;
       allow create, update: if request.resource.data.rating is int
         && request.resource.data.rating >= 0
-        && request.resource.data.rating <= 5;
+        && request.resource.data.rating <= 5
+        && (!('likes' in request.resource.data)
+            || (request.resource.data.likes is list
+                && request.resource.data.likes.size() <= 100));
     }
     match /days/{d} {
       allow read, write: if true;
