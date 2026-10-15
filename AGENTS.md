@@ -8,7 +8,9 @@
 3. 若用戶要求與 `PROJECT.md` 的 Decisions 衝突，先向用戶指出衝突再動手。
 
 ## 工作期間
-- 沒有 build step：整個前端只有 `index.html`，直接用 Firebase JS SDK CDN。除非用戶同意，不要引入 npm、打包工具或框架。
+- 沒有 build step：整個前端只有 `public/index.html`，直接用 Firebase JS SDK CDN。除非用戶同意，不要引入 npm、打包工具或框架。
+- 部署平台為 Cloudflare Workers Static Assets；修改部署相關設定前先閱讀根目錄 `wrangler.jsonc`。
+- 不要把網站檔案資料夾以外的檔案（如 `.firebaserc`、`firebase.json`、`firestore.rules`、`PROJECT.md`、`AGENTS.md`）放進 `assets.directory`。
 - 用戶介面語言：香港粵語口語（繁體中文）。新增文字要保持相同語氣。
 - 回覆用戶時使用繁體中文；若問題以英文提出，保留英文關鍵字。
 - 不要把 `firebaseConfig` 的真實值、service account key、`firebase login` 憑證寫入文件或提交。

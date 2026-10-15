@@ -1,6 +1,6 @@
 # PROJECT.md — 食乜好
 
-> 最後更新：2026-10-10
+> 最後更新：2026-10-15
 > 此文件是專案的唯一說明來源。任何 AI 或人類改動專案後，都要更新此文件。
 
 ## 1. Overview
@@ -13,16 +13,18 @@
 - 介面語言：香港粵語口語。
 
 ## 2. Tech Stack
-- 前端：單一 `index.html`（HTML + CSS + JavaScript module），無 build step。
+- 前端：`public/index.html`（HTML + CSS + JavaScript module），為整個前端，無 build step。
 - 後端：Firebase Cloud Firestore（Spark 免費方案，不綁定付款方式）。
 - SDK：Firebase JS SDK 10.12.0，由 `gstatic.com` CDN 載入。
 - 地圖：Leaflet 1.9.4 及 OpenStreetMap tiles；Google Maps 短連結由 Apps Script Web App 展開。
-- 部署：GitHub Pages（公開儲存庫，Branch `main`，資料夾 root）。
+- 部署：Cloudflare Workers Static Assets；`wrangler.jsonc` 指向 `./public`，專案名稱為 `eatfinder`，`compatibility_date` 為 `2026-10-15`。Cloudflare Git 整合設定為推送 GitHub `main` 分支後自動部署，Build command 留空，Deploy command 為 `npx wrangler deploy`。
+- 網站網址：實際 `workers.dev` 網址待確認；請以 Cloudflare 專案設定為準。
 - 規則部署：Firebase CLI（`npx firebase-tools deploy --only firestore:rules`）。
 - 開發環境：VS Code + GitHub Copilot。
 
 ## 3. File Structure
-- `index.html`：整個 App。內含 `firebaseConfig`（用戶自行填入，勿在此文件記錄真實值）。
+- `public/index.html`：整個前端 App。內含 `firebaseConfig`（用戶自行填入，勿在此文件記錄真實值）。
+- `wrangler.jsonc`：Cloudflare Workers 設定及 Static Assets 網站檔案資料夾。
 - `firestore.rules`：Firestore Security Rules。
 - `firebase.json`：只設定 firestore rules 路徑。
 - `.firebaserc`：Firebase Project ID（default）。
@@ -48,7 +50,7 @@
 - 食評：所有人可見；以五顆星互動選擇評分，滑過可預覽、點擊或觸控選擇，支援 0–5 星及每 0.5 星一級。任何人可修改及刪除任何人的食評。食評可按名字讚好或取消，每個名字每則食評只計一次；列表可選每頁 5、10 或 20 則，亦可用月曆按日篩選及顯示全部。讚好只認名字，無登入下任何人都可冒用其他名字。
 - 新增餐廳時可按「自動讀取名稱、座標及地區」，由 Apps Script 讀取 Google Maps 連結資料；如有地址會填入地址欄並觸發地區判斷。用戶可在新增前手動修改讀取結果。原本的短連結展開功能仍由 `expandUrl` 負責。
 - 新增餐廳時可貼上地址，App 會以地址中的中英文地區名稱自動選擇 18 區；判斷失敗時可手動修改地區。判斷只在前端完成，不依賴外部 API 或 API key。
-- 外觀：可手動切換深色／淺色模式，選擇存在瀏覽器 `localStorage`；首次使用時跟隨系統外觀設定。
+- 外觀：採用 Apple HIG 風格的系統字體、控件、留白及安全區域設計；可手動切換深色／淺色模式，選擇存在瀏覽器 `localStorage`；首次使用時跟隨系統外觀設定。
 - 地圖：以 Leaflet／OpenStreetMap 顯示有座標的餐廳，可按地區或今日候選篩選；餐廳釘點顯示平均星數及評分顏色，今日候選加金色外框；底圖固定使用柔和樣式。新增餐廳時可由 Google Maps 連結自動讀取座標，讀取失敗時可在餐廳清單手動補座標。用戶可使用瀏覽器定位查看自己位置，並在餐廳彈窗查看直線距離。
 
 ## 6. Security Rules（現況）
@@ -67,13 +69,15 @@
 - 推送提醒（11:55）延後，因 Cloud Functions 排程需要 Blaze 付費方案。
 - 日後需要可移交：設定集中在 `firebaseConfig`，Firebase 以 Owner 角色移交，GitHub 儲存庫用 Transfer。
 - Apps Script 用於展開 Google Maps 短連結及讀取餐廳資料，不取代 Firebase 作為資料後端。
+- 部署改用 Cloudflare Workers Static Assets，原因：同一平台日後可加入 Worker 函數及 Workers AI；GitHub Pages 已停用。
 
 ## 8. Setup Summary（給新接手者）
-1. Firebase Console 建立專案，註冊 Web App，複製 `firebaseConfig` 到 `index.html`。
+1. Firebase Console 建立專案，註冊 Web App，複製 `firebaseConfig` 到 `public/index.html`。
 2. 建立 Firestore（Databases & Storage → Firestore）。
 3. `.firebaserc` 填入 Project ID。
 4. `npx firebase-tools login`，再 `npx firebase-tools deploy --only firestore:rules`。
-5. 推送到 GitHub 公開儲存庫，Settings → Pages → Deploy from a branch → `main` / root。
+5. 在 Cloudflare 設定 Workers Git 整合並連結 GitHub 儲存庫；Build command 留空，Deploy command 設為 `npx wrangler deploy`。
+6. 推送到 GitHub `main` 分支以自動部署；實際 `workers.dev` 網址待確認。
 
 ## 9. Known Limitations
 - 任何人可冒名。
@@ -84,6 +88,8 @@
 - 代碼未經真實環境完整測試（以首次部署結果為準）。
 - 沒有自動刪除舊的 `days` 資料。
 - Apps Script `EXPAND_URL` 已設定；短連結展開及餐廳資料自動讀取需配合已部署的 Apps Script Web App 正常回傳 JSON。沒有座標的餐廳不會出現在地圖標記中。
+- 網站網址已由 GitHub Pages 改為 Cloudflare Workers；實際 `workers.dev` 網址待確認。若 Firebase API key 曾設定 HTTP referrer 網站限制，須把新的網站網址加入允許清單；目前未確認有否設定此限制。
+- Cloudflare 靜態檔案請求免費；免費方案限額及任何 Worker 函數用量，應以 Cloudflare 官方文件為準，本文不記錄未核實的限額數字。
 
 ## 10. TODO / Ideas
 - PWA manifest 及圖示（加入主畫面體驗）。
@@ -92,10 +98,12 @@
 - 清理舊 `days` 資料的方法。
 - 重複餐廳檢查（以 Google Maps 連結比對）。
 - 測試 Apps Script 短連結展開、餐廳資料自動讀取及地圖座標讀取。
+- 評估日後加入 Cloudflare Worker 函數及 Workers AI；目前未實作 AI 功能，需先核對 Cloudflare 免費方案限額及官方文件。
 
 ## 11. Changelog（最新在最上，每次改動都要新增）
 格式：`YYYY-MM-DD | 改動者（AI 名稱或人） | 檔案 | 改了什麼 | 為什麼 | 是否需重新部署`
 
+- 2026-10-15 | GitHub Copilot | `PROJECT.md`、`README.md`、`AGENTS.md` | 文件更新為 Cloudflare Workers Static Assets 部署，標明前端位置為 `public/index.html`、新增 `wrangler.jsonc` 說明，並按現有程式及 Firestore 規則校正文檔功能；網站網址及移交步驟未核實處標示待確認 | 令專案文件與目前部署設定、程式功能及規則一致 | 推送 GitHub `main` 後由 Cloudflare Git 整合自動部署；本次文件更改不需 deploy rules
 - 2026-10-10 | GitHub Copilot | `index.html`、`PROJECT.md` | 新增餐廳表單加入操作提示：先輸入 Google Maps 連結並自動讀取，讀取失敗時手動補填資料 | 讓用戶清楚知道新增餐廳的操作次序及後備做法 | 需 push 到 GitHub；不需 deploy rules
 - 2026-10-10 | GitHub Copilot | `index.html`、`PROJECT.md` | 今日午餐頁的地區篩選預設為灣仔 | 讓頁面打開時優先顯示灣仔餐廳 | 需 push 到 GitHub；不需 deploy rules
 - 2026-10-10 | GitHub Copilot | `index.html`、`PROJECT.md` | 擴充前端香港 18 區的中英文地名、屋邨及地標關鍵字對照 | 提升貼上地址後自動判斷地區的命中率 | 需 push 到 GitHub；不需 deploy rules
